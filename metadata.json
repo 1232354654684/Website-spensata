@@ -1,0 +1,6 @@
+{
+  "name": "SMP Negeri 1 Tambak",
+  "description": "Website resmi SMP Negeri 1 Tambak, Banyumas, Jawa Tengah. Sekolah Penggerak: Berkarakter Kuat Berprestasi Hebat.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
