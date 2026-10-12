@@ -196,7 +196,6 @@ export const ARTICLES: Article[] = [
     date: '24/07/2026 09:19',
     author: 'Vira Trianna Putri, S.Kom',
     views: 91,
-    commentsCount: 3,
     category: 'Maklumat & Pelayanan',
     tags: ['#spensata', '#sekilas-info'],
     coverImage: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=1000&auto=format&fit=crop',
@@ -215,7 +214,6 @@ export const ARTICLES: Article[] = [
     date: '22/07/2026 09:46',
     author: 'Vira Trianna Putri, S.Kom',
     views: 113,
-    commentsCount: 5,
     category: 'Akademik & Teknologi',
     tags: ['#spensata', '#sekilas-info', '#TKAD'],
     coverImage: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?q=80&w=1000&auto=format&fit=crop',
@@ -234,7 +232,6 @@ export const ARTICLES: Article[] = [
     date: '22/07/2026 09:22',
     author: 'Vira Trianna Putri, S.Kom',
     views: 106,
-    commentsCount: 4,
     category: 'Kesiswaan & SPMB',
     tags: ['#spensata', '#sekilas-info'],
     coverImage: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=1000&auto=format&fit=crop',
@@ -253,7 +250,6 @@ export const ARTICLES: Article[] = [
     date: '22/07/2026 09:12',
     author: 'Vira Trianna Putri, S.Kom',
     views: 76,
-    commentsCount: 2,
     category: 'Kegiatan Sekolah',
     tags: ['#spensata', '#sekilas-info'],
     coverImage: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1000&auto=format&fit=crop',
@@ -272,7 +268,6 @@ export const ARTICLES: Article[] = [
     date: '22/07/2026 08:55',
     author: 'Vira Trianna Putri, S.Kom',
     views: 104,
-    commentsCount: 6,
     category: 'Paguyuban & Parenting',
     tags: ['#spensata', '#kesehatan', '#sekilas-info'],
     coverImage: 'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?q=80&w=1000&auto=format&fit=crop',
@@ -291,7 +286,6 @@ export const ARTICLES: Article[] = [
     date: '12/08/2025 18:22',
     author: 'Vira Trianna Putri, S.Kom',
     views: 281,
-    commentsCount: 14,
     category: 'Kegiatan & Paguyuban',
     tags: ['#spensata', '#kelaskhususolahraga', '#sekilas-info'],
     coverImage: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?q=80&w=1000&auto=format&fit=crop',
@@ -365,7 +359,8 @@ export const VIDEO_GALLERY: VideoItem[] = [
     description: 'Dokumentasi visual lingkungan sekolah, fasilitas laboratorium digital, dan dinamika pembelajaran aktif peserta didik.',
     date: '2026',
     duration: '04:15',
-    youtubeUrl: 'https://www.youtube.com/watch?v=TosdustSLFg'
+    youtubeUrl: 'https://www.youtube.com/watch?v=TosdustSLFg',
+    thumbnailUrl: 'https://img.youtube.com/vi/TosdustSLFg/hqdefault.jpg'
   },
   {
     id: 'vid-2',
@@ -374,7 +369,19 @@ export const VIDEO_GALLERY: VideoItem[] = [
     description: 'Pameran proyek penguatan profil pelajar pancasila serta penampilan bakat seni dan budaya siswa SMP Negeri 1 Tambak.',
     date: '2026',
     duration: '05:40',
-    youtubeUrl: 'https://www.youtube.com/watch?v=eD3bW3zsxjY'
+    youtubeUrl: 'https://www.youtube.com/watch?v=eD3bW3zsxjY',
+    thumbnailUrl: 'https://img.youtube.com/vi/eD3bW3zsxjY/hqdefault.jpg'
+  },
+  {
+    id: 'vid-3',
+    youtubeId: 'kJQP7kiw5Fk', // [GANTI DENGAN DATA ASLI]: Video contoh
+    title: 'Latihan PBB Tongkat & Kemah Bakti Pramuka SPENSATA',
+    description: 'Dokumentasi ketangkasan baris-berbaris tongkat dan pembinaan karakter kepramukaan pangkalan SMP Negeri 1 Tambak.',
+    date: '2026',
+    duration: '03:30',
+    youtubeUrl: 'https://www.youtube.com/@spensata',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?q=80&w=800&auto=format&fit=crop',
+    isSample: true
   }
 ];
 

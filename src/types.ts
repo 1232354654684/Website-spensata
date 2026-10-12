@@ -7,7 +7,6 @@ export interface Article {
   date: string;
   author: string;
   views: number;
-  commentsCount?: number;
   category: string;
   tags: string[];
   coverImage: string;
@@ -32,6 +31,8 @@ export interface VideoItem {
   date: string;
   duration: string;
   youtubeUrl: string;
+  thumbnailUrl?: string;
+  isSample?: boolean;
 }
 
 export interface HeroSlide {
