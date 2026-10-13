@@ -11,9 +11,12 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
-import { SCHOOL_INFO } from '../data/schoolData';
+import { useSchoolData } from '../context/SchoolDataContext';
 
 export const ContactPage: React.FC = () => {
+  const { data } = useSchoolData();
+  const { identitas, mediaSosial } = data;
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -47,7 +50,6 @@ export const ContactPage: React.FC = () => {
     if (!validate()) return;
 
     setIsSubmitting(true);
-    // Simulate API feedback
     setTimeout(() => {
       setIsSubmitting(false);
       setSubmitted(true);
@@ -74,7 +76,7 @@ export const ContactPage: React.FC = () => {
             <span>Pelayanan Informasi & Pengaduan Terpadu</span>
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight">
-            Hubungi SMP Negeri 1 Tambak
+            Hubungi {identitas.nama || 'SMP Negeri 1 Tambak'}
           </h1>
           <p className="text-base sm:text-lg text-slate-200 leading-relaxed">
             Pintu komunikasi terbuka bagi orang tua wali, siswa, alumni, dan masyarakat. Kami siap memberikan informasi yang Anda butuhkan.
@@ -91,86 +93,95 @@ export const ContactPage: React.FC = () => {
             </h2>
 
             <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
-              <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-[#0E4A6B]/10 dark:bg-[#E5A823]/10 text-[#0E4A6B] dark:text-[#E5A823] flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <MapPin className="w-5 h-5" />
+              {identitas.alamat && (
+                <div className="flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-[#0E4A6B]/10 dark:bg-[#E5A823]/10 text-[#0E4A6B] dark:text-[#E5A823] flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-400 block mb-0.5">
+                      Alamat Sekolah
+                    </span>
+                    <span className="font-semibold text-slate-900 dark:text-white leading-relaxed">
+                      {identitas.alamat}
+                    </span>
+                    {identitas.kodePos && (
+                      <span className="text-xs text-slate-400 block mt-0.5">
+                        Kode Pos: {identitas.kodePos}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <span className="text-xs font-bold text-slate-400 block mb-0.5">
-                    Alamat Sekolah
-                  </span>
-                  <span className="font-semibold text-slate-900 dark:text-white leading-relaxed">
-                    {SCHOOL_INFO.address}
-                  </span>
-                  <span className="text-xs text-slate-400 block mt-0.5">
-                    Kode Pos: {SCHOOL_INFO.postalCode}
-                  </span>
-                </div>
-              </div>
+              )}
 
-              <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-[#0E4A6B]/10 dark:bg-[#E5A823]/10 text-[#0E4A6B] dark:text-[#E5A823] flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Phone className="w-5 h-5" />
+              {identitas.telepon && (
+                <div className="flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-[#0E4A6B]/10 dark:bg-[#E5A823]/10 text-[#0E4A6B] dark:text-[#E5A823] flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Phone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-400 block mb-0.5">
+                      Telepon Kantor
+                    </span>
+                    <a
+                      href={`tel:${identitas.telepon.replace(/[^0-9]/g, '')}`}
+                      className="font-semibold text-[#0E4A6B] dark:text-[#E5A823] hover:underline"
+                    >
+                      {identitas.telepon}
+                    </a>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-xs font-bold text-slate-400 block mb-0.5">
-                    Telepon Kantor
-                  </span>
-                  <a
-                    href={`tel:${SCHOOL_INFO.phone.replace(/[^0-9]/g, '')}`}
-                    className="font-semibold text-[#0E4A6B] dark:text-[#E5A823] hover:underline"
-                  >
-                    {SCHOOL_INFO.phone}
-                  </a>
-                </div>
-              </div>
+              )}
 
-              <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-[#0E4A6B]/10 dark:bg-[#E5A823]/10 text-[#0E4A6B] dark:text-[#E5A823] flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Mail className="w-5 h-5" />
+              {identitas.email && (
+                <div className="flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-[#0E4A6B]/10 dark:bg-[#E5A823]/10 text-[#0E4A6B] dark:text-[#E5A823] flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-400 block mb-0.5">
+                      Surat Elektronik (Email)
+                    </span>
+                    <a
+                      href={`mailto:${identitas.email}`}
+                      className="font-semibold text-[#0E4A6B] dark:text-[#E5A823] hover:underline"
+                    >
+                      {identitas.email}
+                    </a>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-xs font-bold text-slate-400 block mb-0.5">
-                    Surat Elektronik (Email)
-                  </span>
-                  <a
-                    href={`mailto:${SCHOOL_INFO.email}`}
-                    className="font-semibold text-[#0E4A6B] dark:text-[#E5A823] hover:underline"
-                  >
-                    {SCHOOL_INFO.email}
-                  </a>
-                </div>
-              </div>
+              )}
 
-              <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-[#0E4A6B]/10 dark:bg-[#E5A823]/10 text-[#0E4A6B] dark:text-[#E5A823] flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Clock className="w-5 h-5" />
+              {identitas.waktuBelajar && (
+                <div className="flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-[#0E4A6B]/10 dark:bg-[#E5A823]/10 text-[#0E4A6B] dark:text-[#E5A823] flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-400 block mb-0.5">
+                      Waktu Operasional
+                    </span>
+                    <span className="font-semibold text-slate-900 dark:text-white block">
+                      {identitas.waktuBelajar}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-xs font-bold text-slate-400 block mb-0.5">
-                    Jam Layanan Tata Usaha
-                  </span>
-                  <span className="font-semibold text-slate-900 dark:text-white block">
-                    Senin - Kamis: 07.00 - 15.30 WIB
-                  </span>
-                  <span className="font-semibold text-slate-900 dark:text-white block">
-                    Jumat: 07.00 - 11.30 WIB
-                  </span>
-                </div>
-              </div>
+              )}
             </div>
 
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-              <a
-                href={SCHOOL_INFO.socialMedia.googleMaps}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-[#0E4A6B] dark:border-[#E5A823] text-[#0E4A6B] dark:text-[#E5A823] hover:bg-[#0E4A6B] hover:text-white dark:hover:bg-[#E5A823] dark:hover:text-slate-950 font-bold text-xs transition-colors"
-              >
-                <span>Buka di Google Maps</span>
-                <ExternalLink className="w-4 h-4" />
-              </a>
-            </div>
+            {mediaSosial.tautanPeta && (
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                <a
+                  href={mediaSosial.tautanPeta}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-[#0E4A6B] dark:border-[#E5A823] text-[#0E4A6B] dark:text-[#E5A823] hover:bg-[#0E4A6B] hover:text-white dark:hover:bg-[#E5A823] dark:hover:text-slate-950 font-bold text-xs transition-colors"
+                >
+                  <span>Buka di Google Maps</span>
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
+            )}
           </div>
         </div>
 
@@ -192,7 +203,7 @@ export const ContactPage: React.FC = () => {
                     Pesan Berhasil Terkirim!
                   </h4>
                   <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">
-                    Terima kasih telah menghubungi SMP Negeri 1 Tambak. Kami akan segera menindaklanjuti pesan Anda.
+                    Terima kasih telah menghubungi {identitas.nama || 'SMP Negeri 1 Tambak'}. Kami akan segera menindaklanjuti pesan Anda.
                   </p>
                 </div>
               </div>
@@ -308,7 +319,7 @@ export const ContactPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-[#0E4A6B] hover:bg-[#0a3550] text-white font-bold text-sm shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-[#0E4A6B] disabled:opacity-70"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-[#0E4A6B] hover:bg-[#0a3550] text-white font-bold text-sm shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-[#0E4A6B] disabled:opacity-70 cursor-pointer"
               >
                 {isSubmitting ? (
                   <span>Mengirimkan...</span>
@@ -329,21 +340,23 @@ export const ContactPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">
-              Peta Lokasi SMP Negeri 1 Tambak
+              Peta Lokasi {identitas.nama || 'SMP Negeri 1 Tambak'}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Desa Kamulyan, Kecamatan Tambak, Kabupaten Banyumas, Jawa Tengah
+              {identitas.alamat || 'Tambak, Banyumas, Jawa Tengah'}
             </p>
           </div>
-          <a
-            href={SCHOOL_INFO.socialMedia.googleMaps}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors self-start sm:self-auto"
-          >
-            <span>Buka Google Maps</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          {mediaSosial.tautanPeta && (
+            <a
+              href={mediaSosial.tautanPeta}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors self-start sm:self-auto"
+            >
+              <span>Buka Google Maps</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
         </div>
 
         {/* Embedded Interactive Map */}

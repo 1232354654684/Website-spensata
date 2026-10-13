@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Hanya akun admin@spensata.sch.id yang berhak sebagai admin
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email.lower() == 'admin@spensata.sch.id';
+    }
+
+    // Dokumen tunggal: publik boleh membaca, hanya admin admin@spensata.sch.id yang dapat mengubah
+    match /identitas/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /kepalaSekolah/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /mediaSosial/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /visiMisi/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /sejarah/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /elearning/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Koleksi umum: statistik, sarana, heroSlides, galeriFoto, galeriVideo
+    match /statistik/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /sarana/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /heroSlides/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /galeriFoto/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /galeriVideo/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    // Koleksi galeri (album Google Foto): semua orang boleh MEMBACA, hanya admin yang boleh MENULIS
+    match /galeri/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Koleksi berita: Publik hanya boleh membaca yang berstatus 'Terbit'
+    // Berita 'Draft' hanya dapat dibaca dan dikelola oleh admin admin@spensata.sch.id
+    match /berita/{docId} {
+      allow read: if resource.data.status == 'Terbit' || isAdmin();
+      allow write: if isAdmin();
+    }
+  }
+}

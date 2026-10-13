@@ -1,0 +1,11 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // Publik dapat melihat file gambar yang diunggah
+      allow read: if true;
+      // Hanya akun resmi admin@spensata.sch.id yang dapat mengunggah atau menghapus file
+      allow write: if request.auth != null && request.auth.token.email.lower() == 'admin@spensata.sch.id';
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, X, FileText, Image, Video, ArrowRight, BookOpen } from 'lucide-react';
-import { ARTICLES, PHOTO_GALLERY, VIDEO_GALLERY } from '../data/schoolData';
+import { Search, X, FileText, Video, ArrowRight, BookOpen } from 'lucide-react';
+import { useSchoolData } from '../context/SchoolDataContext';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -15,9 +15,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   onNavigateToArticle,
   onNavigateToPage
 }) => {
+  const { data } = useSchoolData();
   const [query, setQuery] = useState('');
 
-  // Handle ESC and Ctrl/Cmd+K shortcuts
+  // Handle ESC shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -33,24 +34,26 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     const q = query.trim().toLowerCase();
     if (!q) return { articles: [], photos: [], videos: [], pages: [] };
 
-    const filteredArticles = ARTICLES.filter(
+    const publishedArticles = data.berita.filter((b) => b.status === 'Terbit');
+
+    const filteredArticles = publishedArticles.filter(
       (a) =>
-        a.title.toLowerCase().includes(q) ||
-        a.excerpt.toLowerCase().includes(q) ||
-        a.tags.some((t) => t.toLowerCase().includes(q))
+        (a.judul && a.judul.toLowerCase().includes(q)) ||
+        (a.ringkasan && a.ringkasan.toLowerCase().includes(q)) ||
+        (Array.isArray(a.tag) && a.tag.some((t) => t.toLowerCase().includes(q)))
     );
 
-    const filteredPhotos = PHOTO_GALLERY.filter(
+    const filteredPhotos = data.galeriFoto.filter(
       (p) =>
-        p.title.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q)
+        (p.judul && p.judul.toLowerCase().includes(q)) ||
+        (p.deskripsi && p.deskripsi.toLowerCase().includes(q)) ||
+        (p.kategori && p.kategori.toLowerCase().includes(q))
     );
 
-    const filteredVideos = VIDEO_GALLERY.filter(
+    const filteredVideos = data.galeriVideo.filter(
       (v) =>
-        v.title.toLowerCase().includes(q) ||
-        v.description.toLowerCase().includes(q)
+        (v.judul && v.judul.toLowerCase().includes(q)) ||
+        (v.deskripsi && v.deskripsi.toLowerCase().includes(q))
     );
 
     const staticPages = [
@@ -66,7 +69,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       videos: filteredVideos,
       pages: staticPages
     };
-  }, [query]);
+  }, [query, data]);
 
   const totalResults =
     results.articles.length +
@@ -80,43 +83,37 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Pencarian Situs"
-      onClick={onClose}
-      className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 pb-6 bg-slate-950/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[80vh]"
-      >
+      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[80vh]">
         {/* Search Input Bar */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-          <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
+        <div className="flex items-center px-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+          <Search className="w-5 h-5 text-slate-400" />
           <input
-            type="search"
+            type="text"
+            autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Cari berita, pengumuman, galeri, atau halaman sekolah..."
-            autoFocus
-            className="flex-1 bg-transparent text-slate-800 dark:text-slate-100 placeholder:text-slate-400 text-sm sm:text-base focus:outline-none"
+            placeholder="Cari berita, foto, video, informasi..."
+            className="w-full py-4 px-3 text-slate-900 dark:text-white bg-transparent focus:outline-none text-base sm:text-lg placeholder:text-slate-400"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+              className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
             >
-              Hapus
+              <X className="w-4 h-4" />
             </button>
           )}
           <button
             onClick={onClose}
-            aria-label="Tutup pencarian"
-            className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 transition-colors"
+            className="ml-2 px-2.5 py-1 text-xs font-semibold rounded-md bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            ESC
           </button>
         </div>
 
-        {/* Search Results / Suggestion Body */}
+        {/* Results Container */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {!query ? (
             <div className="py-8 text-center text-slate-500 dark:text-slate-400">
@@ -144,7 +141,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                           onNavigateToPage(p.id);
                           onClose();
                         }}
-                        className="w-full text-left p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between group transition-colors"
+                        className="w-full text-left p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between group transition-colors cursor-pointer"
                       >
                         <div className="flex items-center gap-2.5">
                           <BookOpen className="w-4 h-4 text-[#0E4A6B] dark:text-[#E5A823]" />
@@ -178,18 +175,18 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                           onNavigateToArticle(art.id);
                           onClose();
                         }}
-                        className="w-full text-left p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-start justify-between group transition-colors gap-3"
+                        className="w-full text-left p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-start justify-between group transition-colors gap-3 cursor-pointer"
                       >
                         <div className="flex items-start gap-2.5">
                           <FileText className="w-4 h-4 text-[#0E4A6B] dark:text-[#E5A823] mt-0.5 flex-shrink-0" />
                           <div>
                             <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-[#0E4A6B] dark:group-hover:text-[#E5A823] line-clamp-1">
-                              {art.title}
+                              {art.judul}
                             </span>
                             <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                              <span>{art.date}</span>
+                              <span>{art.tanggal}</span>
                               <span aria-hidden="true">·</span>
-                              <span>{art.author}</span>
+                              <span>{art.penulis}</span>
                             </div>
                           </div>
                         </div>
@@ -214,18 +211,18 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                           onNavigateToPage('galeri-foto');
                           onClose();
                         }}
-                        className="text-left p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors group"
+                        className="text-left p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors group cursor-pointer"
                       >
                         <img
-                          src={ph.imageUrl}
-                          alt={ph.title}
+                          src={ph.foto}
+                          alt={ph.judul}
                           className="w-12 h-10 object-cover rounded-lg flex-shrink-0"
                         />
                         <div className="overflow-hidden">
                           <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate group-hover:text-[#0E4A6B] dark:group-hover:text-[#E5A823]">
-                            {ph.title}
+                            {ph.judul}
                           </p>
-                          <p className="text-[11px] text-slate-400 truncate">{ph.category}</p>
+                          <p className="text-[11px] text-slate-400 truncate">{ph.kategori}</p>
                         </div>
                       </button>
                     ))}
@@ -247,15 +244,15 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                           onNavigateToPage('galeri-video');
                           onClose();
                         }}
-                        className="w-full text-left p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between group transition-colors"
+                        className="w-full text-left p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between group transition-colors cursor-pointer"
                       >
                         <div className="flex items-center gap-2.5">
                           <Video className="w-4 h-4 text-red-500" />
                           <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-[#0E4A6B] dark:group-hover:text-[#E5A823]">
-                            {v.title}
+                            {v.judul}
                           </span>
                         </div>
-                        <span className="text-xs text-slate-400">{v.duration}</span>
+                        <span className="text-xs text-slate-400">{v.durasi}</span>
                       </button>
                     ))}
                   </div>

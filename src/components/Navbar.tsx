@@ -9,7 +9,7 @@ import {
   ExternalLink,
   BookOpen
 } from 'lucide-react';
-import { SCHOOL_INFO } from '../data/schoolData';
+import { useSchoolData } from '../context/SchoolDataContext';
 
 interface NavbarProps {
   currentPage: string;
@@ -26,6 +26,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   isDarkMode,
   onToggleTheme
 }) => {
+  const { data } = useSchoolData();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -73,11 +74,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight group-hover:text-[#0E4A6B] dark:group-hover:text-[#E5A823] transition-colors leading-tight">
-                    {SCHOOL_INFO.name}
+                    {data.identitas.nama || 'SMP Negeri 1 Tambak'}
                   </h1>
                 </div>
                 <p className="text-xs sm:text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  {SCHOOL_INFO.slogan}
+                  {data.identitas.slogan}
                 </p>
               </div>
             </div>

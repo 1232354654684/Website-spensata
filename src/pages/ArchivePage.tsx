@@ -1,42 +1,50 @@
 import React, { useState, useMemo } from 'react';
-import { Newspaper, Calendar, ArrowRight, Eye, User, Search } from 'lucide-react';
+import { Newspaper, Calendar, ArrowRight, User, Search } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
-import { ARTICLES } from '../data/schoolData';
+import { useSchoolData } from '../context/SchoolDataContext';
 
 interface ArchivePageProps {
   onSelectArticle: (articleId: string) => void;
 }
 
 export const ArchivePage: React.FC<ArchivePageProps> = ({ onSelectArticle }) => {
+  const { data } = useSchoolData();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua');
 
+  // Hanya tampilkan berita yang berstatus Terbit
+  const publishedArticles = useMemo(() => {
+    return data.berita.filter((b) => b.status === 'Terbit');
+  }, [data.berita]);
+
   const categories = useMemo(() => {
-    const list = Array.from(new Set(ARTICLES.map((a) => a.category)));
+    const list = Array.from(new Set(publishedArticles.map((a) => a.kategori).filter(Boolean)));
     return ['Semua', ...list];
-  }, []);
+  }, [publishedArticles]);
 
   // Urutkan artikel dari yang paling baru
   const sortedArticles = useMemo(() => {
     const parseArticleDate = (dateStr: string) => {
-      const [datePart, timePart = '00:00'] = dateStr.split(' ');
-      const [day, month, year] = datePart.split('/').map(Number);
-      const [hour, min] = timePart.split(':').map(Number);
+      if (!dateStr) return 0;
+      const [datePart = '', timePart = '00:00'] = dateStr.split(' ');
+      const [day = 1, month = 1, year = 2026] = datePart.split('/').map(Number);
+      const [hour = 0, min = 0] = timePart.split(':').map(Number);
       return new Date(year, month - 1, day, hour, min).getTime();
     };
 
-    return [...ARTICLES].sort(
-      (a, b) => parseArticleDate(b.date) - parseArticleDate(a.date)
+    return [...publishedArticles].sort(
+      (a, b) => parseArticleDate(b.tanggal) - parseArticleDate(a.tanggal)
     );
-  }, []);
+  }, [publishedArticles]);
 
   const filteredArticles = useMemo(() => {
     return sortedArticles.filter((art) => {
+      const q = searchQuery.toLowerCase();
       const matchesSearch =
-        art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        art.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+        (art.judul && art.judul.toLowerCase().includes(q)) ||
+        (art.ringkasan && art.ringkasan.toLowerCase().includes(q));
       const matchesCategory =
-        selectedCategory === 'Semua' || art.category === selectedCategory;
+        selectedCategory === 'Semua' || art.kategori === selectedCategory;
       return matchesSearch && matchesCategory;
     });
   }, [sortedArticles, searchQuery, selectedCategory]);
@@ -56,7 +64,7 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({ onSelectArticle }) => 
             Semua Berita & Publikasi
           </h1>
           <p className="text-base sm:text-lg text-slate-200 leading-relaxed">
-            Daftar lengkap publikasi kegiatan, pengumuman resmi, dan artikel pendidikan SMP Negeri 1 Tambak.
+            Daftar lengkap publikasi kegiatan, pengumuman resmi, dan artikel pendidikan {data.identitas.nama || 'SMP Negeri 1 Tambak'}.
           </p>
         </div>
       </div>
@@ -69,7 +77,7 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({ onSelectArticle }) => 
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 selectedCategory === cat
                   ? 'bg-[#0E4A6B] text-white dark:bg-[#E5A823] dark:text-slate-950 shadow-md'
                   : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800'
@@ -115,29 +123,32 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({ onSelectArticle }) => 
               >
                 <div className="space-y-1.5 flex-1">
                   <div className="flex items-center gap-3 text-xs text-slate-400">
-                    <span className="flex items-center gap-1 font-semibold text-[#0E4A6B] dark:text-[#E5A823]">
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span>{art.date.split(' ')[0]}</span>
-                    </span>
-                    <span>·</span>
-                    <span className="flex items-center gap-1">
-                      <User className="w-3.5 h-3.5" />
-                      <span>{art.author}</span>
-                    </span>
-                    <span>·</span>
-                    <span className="flex items-center gap-1">
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>{art.views} tayangan</span>
-                    </span>
+                    {art.tanggal && (
+                      <span className="flex items-center gap-1 font-semibold text-[#0E4A6B] dark:text-[#E5A823]">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>{art.tanggal.split(' ')[0]}</span>
+                      </span>
+                    )}
+                    {art.penulis && (
+                      <>
+                        <span>·</span>
+                        <span className="flex items-center gap-1">
+                          <User className="w-3.5 h-3.5" />
+                          <span>{art.penulis}</span>
+                        </span>
+                      </>
+                    )}
                   </div>
 
                   <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-[#0E4A6B] dark:group-hover:text-[#E5A823] transition-colors leading-snug">
-                    {art.title}
+                    {art.judul}
                   </h3>
 
-                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
-                    {art.excerpt}
-                  </p>
+                  {art.ringkasan && (
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
+                      {art.ringkasan}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex-shrink-0 self-end sm:self-center">

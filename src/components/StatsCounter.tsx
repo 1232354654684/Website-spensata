@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Users, GraduationCap, School, Trophy, Sparkles } from 'lucide-react';
-import { SCHOOL_STATS } from '../data/schoolData';
+import { useSchoolData } from '../context/SchoolDataContext';
 
 interface StatCardProps {
   id: string;
   value: number;
   label: string;
-  sublabel: string;
+  sublabel?: string;
   unit: string;
 }
 
@@ -34,9 +34,11 @@ const StatCard: React.FC<StatCardProps> = ({ id, value, label, sublabel, unit })
         <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-700 flex items-center justify-center shadow-xs border border-sky-100/60 dark:border-slate-600/40">
           {getIcon()}
         </div>
-        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-white dark:bg-slate-700 text-[#0E4A6B] dark:text-sky-300 border border-sky-100/80 dark:border-slate-600/60">
-          {unit}
-        </span>
+        {unit && (
+          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-white dark:bg-slate-700 text-[#0E4A6B] dark:text-sky-300 border border-sky-100/80 dark:border-slate-600/60">
+            {unit}
+          </span>
+        )}
       </div>
 
       {/* Number, Label, and Sublabel */}
@@ -49,33 +51,32 @@ const StatCard: React.FC<StatCardProps> = ({ id, value, label, sublabel, unit })
           {label}
         </h3>
 
-        <p className="text-xs mt-1 text-slate-500 dark:text-slate-400">
-          {sublabel}
-        </p>
+        {sublabel && (
+          <p className="text-xs mt-1 text-slate-500 dark:text-slate-400">
+            {sublabel}
+          </p>
+        )}
       </div>
     </div>
   );
 };
 
 export const StatsCounter: React.FC = () => {
+  const { data } = useSchoolData();
+  const stats = data.statistik;
   const containerRef = useRef<HTMLDivElement>(null);
-  const [counts, setCounts] = useState<{ [key: string]: number }>({
-    students: 0,
-    staff: 0,
-    classes: 0,
-    extracurricular: 0
-  });
+  const [counts, setCounts] = useState<{ [key: string]: number }>({});
   const [hasAnimated, setHasAnimated] = useState(false);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || stats.length === 0) return;
 
     // Cek preferensi reduced-motion
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) {
       const finalCounts: { [key: string]: number } = {};
-      SCHOOL_STATS.forEach((s) => {
-        finalCounts[s.id] = s.value;
+      stats.forEach((s) => {
+        finalCounts[s.id] = s.nilai;
       });
       setCounts(finalCounts);
       setHasAnimated(true);
@@ -98,8 +99,8 @@ export const StatsCounter: React.FC = () => {
             const easeOutProgress = 1 - Math.pow(1 - progress, 3);
 
             const nextCounts: { [key: string]: number } = {};
-            SCHOOL_STATS.forEach((stat) => {
-              nextCounts[stat.id] = Math.round(stat.value * easeOutProgress);
+            stats.forEach((stat) => {
+              nextCounts[stat.id] = Math.round(stat.nilai * easeOutProgress);
             });
 
             setCounts(nextCounts);
@@ -118,7 +119,11 @@ export const StatsCounter: React.FC = () => {
 
     observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, [hasAnimated]);
+  }, [hasAnimated, stats]);
+
+  if (stats.length === 0) {
+    return null;
+  }
 
   return (
     <section
@@ -135,24 +140,21 @@ export const StatsCounter: React.FC = () => {
             </span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Kekuatan Komunitas SPENSATA
+            Kekuatan Komunitas {data.identitas.singkatan || 'SPENSATA'}
           </h2>
-        </div>
-        <div className="text-xs text-slate-500 dark:text-slate-400 italic">
-          * Catatan: Data statistik contoh (Ganti dengan data riil sekolah)
         </div>
       </div>
 
-      {/* Grid 4 Kartu dengan gaya warna dan efek hover yang SAMA PERSIS */}
+      {/* Grid Kartu dengan gaya warna dan efek hover yang SAMA PERSIS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {SCHOOL_STATS.map((stat) => (
+        {stats.map((stat) => (
           <StatCard
             key={stat.id}
             id={stat.id}
             value={counts[stat.id] ?? 0}
             label={stat.label}
             sublabel={stat.sublabel}
-            unit={stat.unit}
+            unit={stat.satuan}
           />
         ))}
       </div>

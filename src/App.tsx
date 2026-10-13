@@ -13,13 +13,15 @@ import { ELearningPage } from './pages/ELearningPage';
 import { ContactPage } from './pages/ContactPage';
 import { ArticleDetailPage } from './pages/ArticleDetailPage';
 import { ArchivePage } from './pages/ArchivePage';
-import { ARTICLES, PHOTO_GALLERY } from './data/schoolData';
-import { GalleryItem } from './types';
+import { AdminDashboard } from './admin/AdminDashboard';
+import { SchoolDataProvider, useSchoolData } from './context/SchoolDataContext';
+import { GaleriFotoItem } from './types';
 
-export default function App() {
+function AppContent() {
+  const { data, isLoading } = useSchoolData();
   const [currentPage, setCurrentPage] = useState<string>('beranda');
-  const [selectedArticleId, setSelectedArticleId] = useState<string>('post-59');
-  const [lightboxItem, setLightboxItem] = useState<GalleryItem | null>(null);
+  const [selectedArticleId, setSelectedArticleId] = useState<string>('');
+  const [lightboxItem, setLightboxItem] = useState<GaleriFotoItem | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -60,17 +62,23 @@ export default function App() {
       const parts = hash.split('/');
       const mainRoute = parts[0];
 
-      if (mainRoute === 'berita' && parts[1]) {
-        // Can be an ID or an index
-        const target = ARTICLES.find((a) => a.id === parts[1]) || ARTICLES[parseInt(parts[1], 10)] || ARTICLES[0];
-        setSelectedArticleId(target.id);
+      if (mainRoute === 'admin') {
+        setCurrentPage('admin');
+      } else if (mainRoute === 'berita' && parts[1]) {
+        setSelectedArticleId(parts[1]);
         setCurrentPage('berita-detail');
       } else if (mainRoute === 'berita' || mainRoute === 'arsip') {
         setCurrentPage('berita');
       } else if (
-        ['beranda', 'profil', 'visi-misi', 'galeri-foto', 'galeri-video', 'e-learning', 'hubungi-kami'].includes(
-          mainRoute
-        )
+        [
+          'beranda',
+          'profil',
+          'visi-misi',
+          'galeri-foto',
+          'galeri-video',
+          'e-learning',
+          'hubungi-kami'
+        ].includes(mainRoute)
       ) {
         setCurrentPage(mainRoute);
       }
@@ -98,7 +106,31 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const activeArticle = ARTICLES.find((a) => a.id === selectedArticleId) || ARTICLES[0];
+  // Admin route /#admin rendering
+  if (currentPage === 'admin') {
+    return <AdminDashboard />;
+  }
+
+  // Loading state saat data awal Firestore belum siap
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100">
+        <div className="w-12 h-12 rounded-full border-4 border-[#0E4A6B]/20 border-t-[#0E4A6B] dark:border-[#E5A823]/20 dark:border-t-[#E5A823] animate-spin mb-4" />
+        <h2 className="text-base font-bold text-slate-800 dark:text-slate-200">
+          Memuat Data Sekolah...
+        </h2>
+        <p className="text-xs text-slate-400 mt-1">
+          Menghubungkan ke basis data terpusat
+        </p>
+      </div>
+    );
+  }
+
+  const publishedArticles = data.berita.filter((b) => b.status === 'Terbit');
+  const activeArticle = selectedArticleId
+    ? publishedArticles.find((a) => a.id === selectedArticleId) ||
+      data.berita.find((a) => a.id === selectedArticleId)
+    : null;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200">
@@ -137,11 +169,33 @@ export default function App() {
         {currentPage === 'hubungi-kami' && <ContactPage />}
 
         {currentPage === 'berita-detail' && (
-          <ArticleDetailPage
-            article={activeArticle}
-            onSelectArticle={handleSelectArticle}
-            onNavigateToArchive={() => navigateTo('berita')}
-          />
+          activeArticle ? (
+            <ArticleDetailPage
+              article={activeArticle}
+              onSelectArticle={handleSelectArticle}
+              onNavigateToArchive={() => navigateTo('berita')}
+            />
+          ) : (
+            <div className="max-w-2xl mx-auto py-16 px-6 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center font-bold text-2xl">
+                !
+              </div>
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+                Berita Tidak Ditemukan
+              </h2>
+              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto">
+                Tulisan atau artikel yang Anda cari tidak tersedia atau mungkin telah dipindahkan.
+              </p>
+              <div className="pt-2">
+                <button
+                  onClick={() => navigateTo('berita')}
+                  className="px-6 py-3 rounded-xl bg-[#0E4A6B] hover:bg-[#0a3550] text-white font-bold text-sm shadow-md transition-all cursor-pointer"
+                >
+                  Lihat Semua Berita
+                </button>
+              </div>
+            </div>
+          )
         )}
 
         {(currentPage === 'berita' || currentPage === 'arsip') && (
@@ -166,10 +220,18 @@ export default function App() {
       {/* Global Photo Lightbox Modal */}
       <GalleryLightbox
         item={lightboxItem}
-        items={PHOTO_GALLERY}
+        items={data.galeriFoto}
         onClose={() => setLightboxItem(null)}
         onNavigate={(newItem) => setLightboxItem(newItem)}
       />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <SchoolDataProvider>
+      <AppContent />
+    </SchoolDataProvider>
   );
 }

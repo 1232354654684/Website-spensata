@@ -1,0 +1,231 @@
+{
+  "entities": {
+    "identitas": {
+      "title": "Identitas Sekolah",
+      "description": "Profil formal dan identitas hukum SMP Negeri 1 Tambak",
+      "type": "object",
+      "properties": {
+        "nama": { "type": "string" },
+        "singkatan": { "type": "string" },
+        "slogan": { "type": "string" },
+        "alamat": { "type": "string" },
+        "kodePos": { "type": "string" },
+        "telepon": { "type": "string" },
+        "email": { "type": "string" },
+        "website": { "type": "string" },
+        "program": { "type": "string" },
+        "npsn": { "type": "string" },
+        "statusSekolah": { "type": "string" },
+        "akreditasi": { "type": "string" },
+        "waktuBelajar": { "type": "string" },
+        "copyright": { "type": "string" },
+        "poweredBy": { "type": "string" }
+      },
+      "required": ["nama", "slogan", "alamat", "telepon", "email"]
+    },
+    "kepalaSekolah": {
+      "title": "Kepala Sekolah",
+      "description": "Profil dan sambutan kepala sekolah",
+      "type": "object",
+      "properties": {
+        "nama": { "type": "string" },
+        "jabatan": { "type": "string" },
+        "nip": { "type": "string" },
+        "foto": { "type": "string" },
+        "sambutanSingkat": { "type": "string" },
+        "sambutanLengkap": { "type": "array" }
+      },
+      "required": ["nama", "jabatan"]
+    },
+    "mediaSosial": {
+      "title": "Media Sosial & Peta",
+      "description": "Tautan media sosial resmi dan embed peta lokasi",
+      "type": "object",
+      "properties": {
+        "instagram": { "type": "string" },
+        "youtube": { "type": "string" },
+        "facebook": { "type": "string" },
+        "tautanPeta": { "type": "string" }
+      }
+    },
+    "visiMisi": {
+      "title": "Visi dan Misi",
+      "description": "Visi, indikator visi, misi, dan tujuan sekolah",
+      "type": "object",
+      "properties": {
+        "visi": { "type": "string" },
+        "indikatorVisi": { "type": "array" },
+        "misi": { "type": "array" },
+        "tujuan": { "type": "array" }
+      },
+      "required": ["visi"]
+    },
+    "sejarah": {
+      "title": "Sejarah Sekolah",
+      "description": "Sejarah pendirian dan perkembangan SMP Negeri 1 Tambak",
+      "type": "object",
+      "properties": {
+        "tahunBerdiri": { "type": "string" },
+        "nomorSkPendirian": { "type": "string" },
+        "luasTanah": { "type": "string" },
+        "uraian": { "type": "array" }
+      }
+    },
+    "elearning": {
+      "title": "Portal E-Learning",
+      "description": "Konfigurasi portal Pijar Guru dan Pijar Siswa",
+      "type": "object",
+      "properties": {
+        "guru": { "type": "object" },
+        "siswa": { "type": "object" }
+      }
+    },
+    "statistik": {
+      "title": "Statistik Sekolah",
+      "description": "Item angka statistik capaian sekolah",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nilai": { "type": "number" },
+        "label": { "type": "string" },
+        "sublabel": { "type": "string" },
+        "satuan": { "type": "string" },
+        "urutan": { "type": "number" }
+      },
+      "required": ["id", "nilai", "label", "satuan"]
+    },
+    "sarana": {
+      "title": "Sarana dan Prasarana",
+      "description": "Daftar sarana, prasarana, dan fasilitas sekolah",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nama": { "type": "string" },
+        "keterangan": { "type": "string" },
+        "foto": { "type": "string" },
+        "urutan": { "type": "number" }
+      },
+      "required": ["nama", "keterangan"]
+    },
+    "heroSlide": {
+      "title": "Slide Hero Beranda",
+      "description": "Banner slider utama pada halaman beranda",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "judul": { "type": "string" },
+        "subjudul": { "type": "string" },
+        "badge": { "type": "string" },
+        "gambar": { "type": "string" },
+        "teksTombolUtama": { "type": "string" },
+        "tautanTombolUtama": { "type": "string" },
+        "teksTombolKedua": { "type": "string" },
+        "tautanTombolKedua": { "type": "string" },
+        "urutan": { "type": "number" }
+      },
+      "required": ["judul", "gambar"]
+    },
+    "berita": {
+      "title": "Warta & Berita Sekolah",
+      "description": "Artikel, publikasi, pengumuman sekolah",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "judul": { "type": "string" },
+        "slug": { "type": "string" },
+        "ringkasan": { "type": "string" },
+        "isi": { "type": "array" },
+        "tanggal": { "type": "string" },
+        "penulis": { "type": "string" },
+        "kategori": { "type": "string" },
+        "tag": { "type": "array" },
+        "fotoSampul": { "type": "string" },
+        "tautanAsli": { "type": "string" },
+        "tandaiPopuler": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["Terbit", "Draft"] },
+        "views": { "type": "number" }
+      },
+      "required": ["judul", "status", "tanggal"]
+    },
+    "galeriFoto": {
+      "title": "Galeri Foto",
+      "description": "Item foto dokumentasi kegiatan",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "judul": { "type": "string" },
+        "deskripsi": { "type": "string" },
+        "tanggal": { "type": "string" },
+        "kategori": { "type": "string" },
+        "foto": { "type": "string" },
+        "urutan": { "type": "number" }
+      },
+      "required": ["judul", "foto"]
+    },
+    "galeriVideo": {
+      "title": "Galeri Video",
+      "description": "Item video kegiatan sekolah",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "judul": { "type": "string" },
+        "deskripsi": { "type": "string" },
+        "tanggal": { "type": "string" },
+        "durasi": { "type": "string" },
+        "tautanYouTube": { "type": "string" },
+        "urutan": { "type": "number" }
+      },
+      "required": ["judul", "tautanYouTube"]
+    }
+  },
+  "firestore": {
+    "/identitas/{id}": {
+      "schema": "identitas",
+      "description": "Dokumen informasi identitas sekolah"
+    },
+    "/kepalaSekolah/{id}": {
+      "schema": "kepalaSekolah",
+      "description": "Dokumen profil kepala sekolah"
+    },
+    "/mediaSosial/{id}": {
+      "schema": "mediaSosial",
+      "description": "Dokumen tautan media sosial dan peta"
+    },
+    "/visiMisi/{id}": {
+      "schema": "visiMisi",
+      "description": "Dokumen visi dan misi sekolah"
+    },
+    "/sejarah/{id}": {
+      "schema": "sejarah",
+      "description": "Dokumen sejarah sekolah"
+    },
+    "/elearning/{id}": {
+      "schema": "elearning",
+      "description": "Dokumen konfigurasi e-learning"
+    },
+    "/statistik/{id}": {
+      "schema": "statistik",
+      "description": "Koleksi item statistik sekolah"
+    },
+    "/sarana/{id}": {
+      "schema": "sarana",
+      "description": "Koleksi item fasilitas dan sarana"
+    },
+    "/heroSlides/{id}": {
+      "schema": "heroSlide",
+      "description": "Koleksi banner hero slider beranda"
+    },
+    "/berita/{id}": {
+      "schema": "berita",
+      "description": "Koleksi artikel dan berita sekolah"
+    },
+    "/galeriFoto/{id}": {
+      "schema": "galeriFoto",
+      "description": "Koleksi dokumentasi galeri foto"
+    },
+    "/galeriVideo/{id}": {
+      "schema": "galeriVideo",
+      "description": "Koleksi tayangan video kegiatan sekolah"
+    }
+  }
+}

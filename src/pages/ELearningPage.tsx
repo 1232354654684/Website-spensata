@@ -12,9 +12,12 @@ import {
   BookOpen
 } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
-import { E_LEARNING_PORTALS, SCHOOL_INFO } from '../data/schoolData';
+import { useSchoolData } from '../context/SchoolDataContext';
 
 export const ELearningPage: React.FC = () => {
+  const { data } = useSchoolData();
+  const { elearning, identitas } = data;
+
   return (
     <div className="max-w-5xl mx-auto space-y-10">
       <Breadcrumb items={[{ label: 'E-Learning' }]} />
@@ -24,13 +27,13 @@ export const ELearningPage: React.FC = () => {
         <div className="relative z-10 max-w-2xl space-y-3">
           <div className="inline-flex items-center gap-2 text-xs font-bold text-[#E5A823] uppercase tracking-wider">
             <Sparkles className="w-4 h-4" />
-            <span>Digitalisasi Pendidikan · Sekolah Penggerak</span>
+            <span>{identitas.program || 'Digitalisasi Pendidikan · Sekolah Penggerak'}</span>
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight">
             Portal E-Learning Pijar Sekolah
           </h1>
           <p className="text-base sm:text-lg text-slate-200 leading-relaxed">
-            Sistem pembelajaran dan manajemen akademik terpadu SMP Negeri 1 Tambak. Akses materi, penugasan, presensi, dan penilaian secara efisien dalam satu pintu.
+            Sistem pembelajaran dan manajemen akademik terpadu {identitas.nama || 'SMP Negeri 1 Tambak'}. Akses materi, penugasan, presensi, dan penilaian secara efisien dalam satu pintu.
           </p>
         </div>
       </div>
@@ -46,35 +49,41 @@ export const ELearningPage: React.FC = () => {
               <div className="w-14 h-14 rounded-2xl bg-[#0E4A6B] text-white flex items-center justify-center shadow-md">
                 <Users className="w-7 h-7 text-[#E5A823]" />
               </div>
-              <span className="text-xs font-bold text-[#0E4A6B] dark:text-[#E5A823] bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
-                {E_LEARNING_PORTALS.guru.badge}
-              </span>
+              {elearning.guru.label && (
+                <span className="text-xs font-bold text-[#0E4A6B] dark:text-[#E5A823] bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                  {elearning.guru.label}
+                </span>
+              )}
             </div>
 
             <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-              {E_LEARNING_PORTALS.guru.name}
+              {elearning.guru.nama || 'Pijar Guru (SIM Sekolah)'}
             </h2>
 
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              {E_LEARNING_PORTALS.guru.description}
-            </p>
+            {elearning.guru.deskripsi && (
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                {elearning.guru.deskripsi}
+              </p>
+            )}
 
-            <div className="mt-6 space-y-2.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                Fitur Utama Pendidik:
-              </span>
-              {E_LEARNING_PORTALS.guru.features.map((f, i) => (
-                <div key={i} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
-                  <span>{f}</span>
-                </div>
-              ))}
-            </div>
+            {Array.isArray(elearning.guru.fitur) && elearning.guru.fitur.length > 0 && (
+              <div className="mt-6 space-y-2.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                  Fitur Utama Pendidik:
+                </span>
+                {elearning.guru.fitur.map((f, i) => (
+                  <div key={i} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
+                    <span>{f}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
             <a
-              href={E_LEARNING_PORTALS.guru.targetUrl}
+              href={elearning.guru.tautan || 'https://sim.pijarsekolah.id/login'}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-[#0E4A6B] hover:bg-[#0a3550] text-white font-bold text-sm shadow-lg shadow-[#0E4A6B]/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
@@ -97,35 +106,41 @@ export const ELearningPage: React.FC = () => {
               <div className="w-14 h-14 rounded-2xl bg-[#E5A823] text-slate-950 flex items-center justify-center shadow-md">
                 <GraduationCap className="w-7 h-7 text-slate-950" />
               </div>
-              <span className="text-xs font-bold text-slate-700 dark:text-[#E5A823] bg-amber-50 dark:bg-slate-800 px-3 py-1 rounded-full">
-                {E_LEARNING_PORTALS.siswa.badge}
-              </span>
+              {elearning.siswa.label && (
+                <span className="text-xs font-bold text-slate-700 dark:text-[#E5A823] bg-amber-50 dark:bg-slate-800 px-3 py-1 rounded-full">
+                  {elearning.siswa.label}
+                </span>
+              )}
             </div>
 
             <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-              {E_LEARNING_PORTALS.siswa.name}
+              {elearning.siswa.nama || 'Pijar Siswa'}
             </h2>
 
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              {E_LEARNING_PORTALS.siswa.description}
-            </p>
+            {elearning.siswa.deskripsi && (
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                {elearning.siswa.deskripsi}
+              </p>
+            )}
 
-            <div className="mt-6 space-y-2.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                Fitur Utama Siswa:
-              </span>
-              {E_LEARNING_PORTALS.siswa.features.map((f, i) => (
-                <div key={i} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
-                  <CheckCircle2 className="w-4 h-4 text-[#E5A823] mt-0.5 flex-shrink-0" />
-                  <span>{f}</span>
-                </div>
-              ))}
-            </div>
+            {Array.isArray(elearning.siswa.fitur) && elearning.siswa.fitur.length > 0 && (
+              <div className="mt-6 space-y-2.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                  Fitur Utama Siswa:
+                </span>
+                {elearning.siswa.fitur.map((f, i) => (
+                  <div key={i} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                    <CheckCircle2 className="w-4 h-4 text-[#E5A823] mt-0.5 flex-shrink-0" />
+                    <span>{f}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
             <a
-              href={E_LEARNING_PORTALS.siswa.targetUrl}
+              href={elearning.siswa.tautan || 'https://siswa.pijarsekolah.id/login'}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-[#E5A823] hover:bg-[#d89c1a] text-slate-950 font-bold text-sm shadow-lg shadow-[#E5A823]/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
@@ -145,7 +160,7 @@ export const ELearningPage: React.FC = () => {
         <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
           <Laptop className="w-6 h-6 text-[#0E4A6B] dark:text-[#E5A823]" />
           <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Digitalisasi Pendidikan di SMP Negeri 1 Tambak
+            Digitalisasi Pendidikan di {identitas.nama || 'SMP Negeri 1 Tambak'}
           </h3>
         </div>
 
@@ -182,19 +197,21 @@ export const ELearningPage: React.FC = () => {
         </div>
 
         {/* Bantuan Teknis */}
-        <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 flex items-start gap-3.5">
-          <HelpCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-          <div className="text-xs sm:text-sm text-slate-700 dark:text-slate-300">
-            <span className="font-bold text-slate-900 dark:text-white block mb-0.5">
-              Kendala Login atau Lupa Kata Sandi?
-            </span>
-            Silakan hubungi Tim IT / Helpdesk Laboratorium Komputer SMP Negeri 1 Tambak pada jam kerja sekolah atau kirim email ke{' '}
-            <a href={`mailto:${SCHOOL_INFO.email}`} className="font-semibold underline text-[#0E4A6B] dark:text-[#E5A823]">
-              {SCHOOL_INFO.email}
-            </a>
-            .
+        {identitas.email && (
+          <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 flex items-start gap-3.5">
+            <HelpCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+            <div className="text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+              <span className="font-bold text-slate-900 dark:text-white block mb-0.5">
+                Kendala Login atau Lupa Kata Sandi?
+              </span>
+              Silakan hubungi Tim IT / Helpdesk Laboratorium Komputer {identitas.nama || 'SMP Negeri 1 Tambak'} pada jam kerja sekolah atau kirim email ke{' '}
+              <a href={`mailto:${identitas.email}`} className="font-semibold underline text-[#0E4A6B] dark:text-[#E5A823]">
+                {identitas.email}
+              </a>
+              .
+            </div>
           </div>
-        </div>
+        )}
       </section>
     </div>
   );
