@@ -18,7 +18,69 @@ import {
 } from 'firebase/storage';
 import { db, storage, isFirebaseConfigured } from './firebase';
 import rawSeedData from '../../seed-data.json';
-import { SchoolStoreData } from '../types';
+import { SchoolStoreData, GaleriAlbumItem } from '../types';
+
+/**
+ * Shared helper to parse album date string or timestamp for accurate descending sorting
+ */
+export function parseDateString(dateStr?: string, timestamp?: any): number {
+  if (timestamp) {
+    if (typeof timestamp === 'number') return timestamp;
+    if (timestamp?.toMillis) return timestamp.toMillis();
+    if (timestamp?.seconds) return timestamp.seconds * 1000;
+  }
+  if (!dateStr) return 0;
+  const direct = Date.parse(dateStr);
+  if (!isNaN(direct)) return direct;
+
+  const monthMap: Record<string, number> = {
+    jan: 0, januari: 0,
+    feb: 1, februari: 1,
+    mar: 2, maret: 2,
+    apr: 3, april: 3,
+    mei: 4, may: 4,
+    jun: 5, juni: 5,
+    jul: 6, juli: 6,
+    agu: 7, agustus: 7, aug: 7,
+    sep: 8, september: 8,
+    okt: 9, oktober: 9, oct: 9,
+    nov: 10, november: 10,
+    des: 11, desember: 11, dec: 11
+  };
+
+  const parts = dateStr.trim().toLowerCase().split(/[\s,/-]+/);
+  if (parts.length >= 3) {
+    let day = parseInt(parts[0], 10);
+    const monthName = parts[1];
+    let year = parseInt(parts[2], 10);
+
+    if (day > 1900) {
+      year = parseInt(parts[0], 10);
+      day = parseInt(parts[2], 10);
+    }
+
+    const monthIndex = monthMap[monthName] ?? -1;
+    if (monthIndex !== -1 && !isNaN(day) && !isNaN(year)) {
+      return new Date(year, monthIndex, day).getTime();
+    }
+  }
+
+  const yearMatch = dateStr.match(/\b(20\d\d)\b/);
+  if (yearMatch) {
+    return new Date(parseInt(yearMatch[1], 10), 0, 1).getTime();
+  }
+
+  return 0;
+}
+
+export function sortAlbumsByNewest(albums: GaleriAlbumItem[]): GaleriAlbumItem[] {
+  return [...albums].sort((a, b) => {
+    const timeA = parseDateString(a.tanggal, a.dibuatPada);
+    const timeB = parseDateString(b.tanggal, b.dibuatPada);
+    if (timeA !== timeB) return timeB - timeA;
+    return (b.id || '').localeCompare(a.id || '');
+  });
+}
 
 const LOCAL_STORAGE_KEY = 'spensata_offline_store';
 
@@ -308,6 +370,68 @@ export const dataService = {
 
     return () => {
       setOfCallbacks.delete(callback as any);
+    };
+  },
+
+  /**
+   * Shared onSnapshot listener for the 'galeri' collection in Firestore.
+   * Automatically sorts albums from newest to oldest.
+   * Both Beranda and Halaman Galeri Foto use this same data retrieval function.
+   */
+  subscribeGaleri(
+    callback: (albums: GaleriAlbumItem[]) => void,
+    onError?: (err: any) => void
+  ): () => void {
+    if (isFirebaseConfigured() && db) {
+      try {
+        const colRef = collection(db, 'galeri');
+        const q = query(colRef);
+        const unsubscribe = onSnapshot(
+          q,
+          (snap) => {
+            if (!snap.empty) {
+              const items = snap.docs.map((d) => ({ id: d.id, ...d.data() } as GaleriAlbumItem));
+              const sorted = sortAlbumsByNewest(items);
+              callback(sorted);
+            } else {
+              const initial = (localStore as any).galeri || [];
+              callback(sortAlbumsByNewest(initial));
+            }
+          },
+          (error) => {
+            console.warn('Firestore subscription error on galeri:', error);
+            if (onError) onError(error);
+            const initial = (localStore as any).galeri || [];
+            callback(sortAlbumsByNewest(initial));
+          }
+        );
+        return unsubscribe;
+      } catch (err: any) {
+        console.warn('Error setting up onSnapshot for galeri:', err);
+        if (onError) onError(err);
+      }
+    }
+
+    // Fallback for local storage / offline store
+    const key = 'galeri';
+    if (!localListeners.has(key)) {
+      localListeners.set(key, new Set());
+    }
+    const listener = (val: any) => {
+      const items = Array.isArray(val) ? val : [];
+      callback(sortAlbumsByNewest(items));
+    };
+    localListeners.get(key)!.add(listener);
+
+    // Initial trigger
+    const initial = (localStore as any).galeri || [];
+    callback(sortAlbumsByNewest(initial));
+
+    return () => {
+      const set = localListeners.get(key);
+      if (set) {
+        set.delete(listener);
+      }
     };
   },
 

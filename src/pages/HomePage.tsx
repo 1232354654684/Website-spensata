@@ -1,16 +1,21 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Youtube,
   ExternalLink,
   ChevronRight,
   Play,
-  BellRing
+  BellRing,
+  Camera,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { HeroSlider } from '../components/HeroSlider';
 import { StatsCounter } from '../components/StatsCounter';
 import { NewsCard } from '../components/NewsCard';
+import { GaleriAlbumCard } from '../components/GaleriAlbumCard';
 import { useSchoolData } from '../context/SchoolDataContext';
-import { GaleriFotoItem } from '../types';
+import { dataService } from '../services/dataService';
+import { GaleriAlbumItem, GaleriFotoItem } from '../types';
 
 /**
  * KONFIGURASI JUMLAH BERITA TERBARU DI BERANDA
@@ -32,6 +37,36 @@ export const HomePage: React.FC<HomePageProps> = ({
   onNavigateToAllNews
 }) => {
   const { data } = useSchoolData();
+
+  // Real-time Firestore onSnapshot listener untuk koleksi 'galeri'
+  const [galeriAlbums, setGaleriAlbums] = useState<GaleriAlbumItem[]>(() => data.galeri || []);
+  const [galeriLoading, setGaleriLoading] = useState<boolean>(!data.galeri || data.galeri.length === 0);
+  const [galeriError, setGaleriError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Sinkronisasi real-time memakai dataService.subscribeGaleri yang sama dengan halaman Galeri Foto
+    const unsubscribe = dataService.subscribeGaleri(
+      (albums) => {
+        setGaleriAlbums(albums);
+        setGaleriError(null);
+        setGaleriLoading(false);
+      },
+      (err) => {
+        console.error('Error fetching galeri on HomePage:', err);
+        setGaleriError(err?.message || 'Gagal memuat dokumentasi galeri foto.');
+        setGaleriLoading(false);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  // Urutkan dari tanggal terbaru dan batasi tampilkan 6 album/foto terbaru saja
+  const latestGaleriAlbums = useMemo(() => {
+    return galeriAlbums.slice(0, 6);
+  }, [galeriAlbums]);
 
   // Helper untuk mendapatkan ID YouTube dari URL
   const getYouTubeId = (url: string) => {
@@ -308,58 +343,67 @@ export const HomePage: React.FC<HomePageProps> = ({
         </section>
       )}
 
-      {/* 7. Section: Galeri Foto Unggulan (Full Width) */}
-      {data.galeriFoto.length > 0 && (
-        <section aria-labelledby="galeri-foto-heading" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-3 border-b border-slate-200 dark:border-slate-800 gap-2">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-6 bg-[#E5A823] rounded-full" />
-              <h2
-                id="galeri-foto-heading"
-                className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight"
-              >
-                Dokumentasi & Galeri Foto
-              </h2>
-            </div>
-
-            <button
-              onClick={() => onNavigate('galeri-foto')}
-              className="text-xs sm:text-sm font-bold text-[#0E4A6B] dark:text-[#E5A823] hover:underline flex items-center gap-1 self-start sm:self-auto cursor-pointer"
+      {/* 7. Section: Dokumentasi & Galeri Foto (Sinkron dengan Koleksi Firestore 'galeri') */}
+      <section aria-labelledby="galeri-foto-heading" className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-3 border-b border-slate-200 dark:border-slate-800 gap-2">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-[#E5A823] rounded-full" />
+            <h2
+              id="galeri-foto-heading"
+              className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight"
             >
-              <span>Lihat Semua Foto</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
+              Dokumentasi & Galeri Foto
+            </h2>
           </div>
 
-          {/* Photo Tiles Full Width in 3-col on desktop, 2-col on tablet, 1-col on mobile */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data.galeriFoto.slice(0, 6).map((item) => (
-              <div
-                key={item.id}
-                onClick={() => onOpenLightbox(item)}
-                className="group relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-200/80 dark:border-slate-800"
-              >
-                <img
-                  src={item.foto}
-                  alt={item.judul}
-                  loading="lazy"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+          <button
+            onClick={() => onNavigate('galeri-foto')}
+            className="text-xs sm:text-sm font-bold text-[#0E4A6B] dark:text-[#E5A823] hover:underline flex items-center gap-1 self-start sm:self-auto cursor-pointer"
+          >
+            <span>Lihat Semua Galeri</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
 
-                <div className="absolute inset-0 p-5 flex flex-col justify-end text-white">
-                  <span className="text-[11px] font-semibold text-[#E5A823] uppercase tracking-wider mb-1">
-                    {item.kategori}
-                  </span>
-                  <h3 className="text-base font-bold leading-snug line-clamp-2 group-hover:text-[#E5A823] transition-colors">
-                    {item.judul}
-                  </h3>
-                </div>
-              </div>
+        {galeriLoading ? (
+          <div className="py-16 flex flex-col items-center justify-center text-slate-400 gap-2.5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+            <Loader2 className="w-7 h-7 animate-spin text-[#0E4A6B] dark:text-[#E5A823]" />
+            <span className="text-xs sm:text-sm font-medium">Memuat dokumentasi galeri terbaru...</span>
+          </div>
+        ) : galeriError ? (
+          <div className="p-6 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold text-sm">Gagal memuat dokumentasi galeri</p>
+              <p className="text-xs text-rose-500/80 leading-relaxed">{galeriError}</p>
+            </div>
+          </div>
+        ) : latestGaleriAlbums.length === 0 ? (
+          <div className="text-center py-16 px-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-400 space-y-2.5 shadow-sm">
+            <Camera className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600" />
+            <p className="font-bold text-slate-700 dark:text-slate-200 text-base sm:text-lg">
+              Belum ada dokumentasi
+            </p>
+            <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
+              Dokumentasi kegiatan dan album Google Foto akan tampil di sini saat ditambahkan oleh admin sekolah.
+            </p>
+          </div>
+        ) : (
+          /* Grid 3 kolom di desktop, 2 di tablet, 1 di HP */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {latestGaleriAlbums.map((album) => (
+              <GaleriAlbumCard
+                key={album.id}
+                album={album}
+                schoolShortName={data.identitas.singkatan || 'SPENSATA'}
+                onOpenPhoto={(_alb, _photoIdx) => {
+                  onNavigate('galeri-foto');
+                }}
+              />
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
     </div>
   );
 };

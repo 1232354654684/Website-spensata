@@ -3,15 +3,17 @@ import {
   Camera,
   ExternalLink,
   Search,
-  Calendar,
   X,
   ChevronLeft,
   ChevronRight,
   Image as ImageIcon,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
+import { GaleriAlbumCard } from '../components/GaleriAlbumCard';
 import { useSchoolData } from '../context/SchoolDataContext';
+import { dataService } from '../services/dataService';
 import { GaleriAlbumItem } from '../types';
 
 interface GalleryPhotoPageProps {
@@ -20,11 +22,15 @@ interface GalleryPhotoPageProps {
 
 export const GalleryPhotoPage: React.FC<GalleryPhotoPageProps> = () => {
   const { data } = useSchoolData();
-  const albums: GaleriAlbumItem[] = data.galeri || [];
+
+  // Sinkronisasi data real-time dengan koleksi Firestore 'galeri' menggunakan fungsi yang sama
+  const [albums, setAlbums] = useState<GaleriAlbumItem[]>(() => data.galeri || []);
+  const [loading, setLoading] = useState<boolean>(!data.galeri || data.galeri.length === 0);
+  const [error, setError] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedYear, setSelectedYear] = useState('Semua');
-  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  const [failedLightboxImages, setFailedLightboxImages] = useState<Set<string>>(new Set());
 
   // Lightbox State
   const [lightboxState, setLightboxState] = useState<{
@@ -36,8 +42,27 @@ export const GalleryPhotoPage: React.FC<GalleryPhotoPageProps> = () => {
   const touchStartXRef = useRef<number | null>(null);
   const touchEndXRef = useRef<number | null>(null);
 
-  const markFailed = (url: string) => {
-    setFailedImages((prev) => {
+  useEffect(() => {
+    const unsubscribe = dataService.subscribeGaleri(
+      (items) => {
+        setAlbums(items);
+        setError(null);
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Error in GalleryPhotoPage onSnapshot:', err);
+        setError(err?.message || 'Gagal memuat album galeri foto dari database.');
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const markLightboxFailed = (url: string) => {
+    setFailedLightboxImages((prev) => {
       const next = new Set(prev);
       next.add(url);
       return next;
@@ -98,8 +123,10 @@ export const GalleryPhotoPage: React.FC<GalleryPhotoPageProps> = () => {
     if (total <= 1) return;
     setLightboxState((prev) => {
       if (!prev) return null;
-      const nextIndex = (prev.photoIndex - 1 + total) % total;
-      return { ...prev, photoIndex: nextIndex };
+      return {
+        ...prev,
+        photoIndex: (prev.photoIndex - 1 + total) % total
+      };
     });
   };
 
@@ -109,73 +136,84 @@ export const GalleryPhotoPage: React.FC<GalleryPhotoPageProps> = () => {
     if (total <= 1) return;
     setLightboxState((prev) => {
       if (!prev) return null;
-      const nextIndex = (prev.photoIndex + 1) % total;
-      return { ...prev, photoIndex: nextIndex };
+      return {
+        ...prev,
+        photoIndex: (prev.photoIndex + 1) % total
+      };
     });
   };
 
-  // Mobile touch swipe handlers
+  // Mobile swipe gestures
   const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartXRef.current = e.targetTouches[0].clientX;
+    touchStartXRef.current = e.touches[0].clientX;
+    touchEndXRef.current = null;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndXRef.current = e.targetTouches[0].clientX;
+    touchEndXRef.current = e.touches[0].clientX;
   };
 
   const handleTouchEnd = () => {
     if (touchStartXRef.current === null || touchEndXRef.current === null) return;
     const distance = touchStartXRef.current - touchEndXRef.current;
-    const minSwipeDistance = 45;
-
+    const minSwipeDistance = 50;
     if (distance > minSwipeDistance) {
-      // Swiped left -> next
       handleNextPhoto();
     } else if (distance < -minSwipeDistance) {
-      // Swiped right -> prev
       handlePrevPhoto();
     }
-
     touchStartXRef.current = null;
     touchEndXRef.current = null;
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      <Breadcrumb items={[{ label: 'Galeri', href: '#galeri-foto' }, { label: 'Galeri Foto' }]} />
+    <div className="space-y-8 animate-in fade-in duration-300 pb-12">
+      <Breadcrumb
+        items={[
+          { label: 'Beranda', href: '#beranda' },
+          { label: 'Galeri', href: '#galeri-foto' },
+          { label: 'Galeri Foto' }
+        ]}
+      />
 
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-[#0E4A6B] to-[#12587e] dark:from-[#0E4A6B]/90 dark:to-[#0A3550] text-white rounded-3xl p-8 sm:p-12 shadow-md relative overflow-hidden">
-        <div className="relative z-10 max-w-2xl space-y-3">
-          <div className="inline-flex items-center gap-2 text-xs font-bold text-[#E5A823] uppercase tracking-wider">
-            <Camera className="w-4 h-4" />
-            <span>Dokumentasi Resmi Sekolah di Google Foto</span>
+      {/* Header Section */}
+      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#0E4A6B] via-[#0E4A6B]/95 to-slate-900 text-white p-6 sm:p-10 shadow-lg">
+        <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-[#E5A823]/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 max-w-3xl space-y-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E5A823]/20 border border-[#E5A823]/30 text-[#E5A823] text-xs font-bold uppercase tracking-wider">
+            <Camera className="w-3.5 h-3.5" />
+            <span>Dokumentasi Resmi Sekolah</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight">
-            Galeri Foto {data.identitas.singkatan || data.identitas.nama || 'SPENSATA'}
+
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
+            Galeri Foto & Album Kegiatan
           </h1>
-          <p className="text-base sm:text-lg text-slate-200 leading-relaxed">
-            Koleksi album foto rekam jejak kegiatan belajar mengajar, lomba, pembinaan karakter, dan karya siswa {data.identitas.nama || 'SMP Negeri 1 Tambak'}.
+
+          <p className="text-sm sm:text-base text-slate-200 leading-relaxed max-w-2xl">
+            Arsip dokumentasi visual beragam kegiatan akademik, perkemahan, upacara, dan prestasi
+            peserta didik {data.identitas.namaSekolah}. Album lengkap tersimpan secara aman di
+            Google Foto.
           </p>
         </div>
       </div>
 
-      {/* Search and Year Filter */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Search and Year Filter Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
         {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari judul album kegiatan..."
-            className="w-full pl-10 pr-10 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0E4A6B] dark:focus:ring-[#E5A823]"
+            placeholder="Cari judul album atau kegiatan..."
+            className="w-full pl-10 pr-9 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0E4A6B] dark:focus:ring-[#E5A823]"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+              title="Hapus pencarian"
             >
               <X className="w-4 h-4" />
             </button>
@@ -205,167 +243,46 @@ export const GalleryPhotoPage: React.FC<GalleryPhotoPageProps> = () => {
         )}
       </div>
 
-      {/* Album Cards Grid: 3 cols on desktop, 2 on tablet, 1 on mobile */}
-      {filteredAlbums.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 text-slate-400 text-sm space-y-2">
-          <ImageIcon className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600" />
-          <p className="font-semibold text-slate-600 dark:text-slate-300">
-            Tidak ada album foto yang ditemukan.
+      {/* Loading & Error States */}
+      {loading ? (
+        <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+          <Loader2 className="w-8 h-8 animate-spin text-[#0E4A6B] dark:text-[#E5A823]" />
+          <p className="text-sm font-medium">Memuat album galeri foto...</p>
+        </div>
+      ) : error ? (
+        <div className="p-6 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-bold text-sm">Gagal memuat galeri</p>
+            <p className="text-xs text-rose-500/80 leading-relaxed">{error}</p>
+          </div>
+        </div>
+      ) : filteredAlbums.length === 0 ? (
+        /* Empty State */
+        <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 text-slate-400 text-sm space-y-2.5 shadow-sm">
+          <ImageIcon className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600" />
+          <p className="font-bold text-slate-700 dark:text-slate-200 text-base">
+            Tidak ada album foto yang ditemukan
           </p>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
             {searchQuery || selectedYear !== 'Semua'
-              ? 'Coba ganti kata kunci pencarian atau pilih tahun lain.'
-              : 'Belum ada album yang ditambahkan di koleksi galeri.'}
+              ? 'Coba ganti kata kunci pencarian atau pilih filter tahun lain.'
+              : 'Belum ada dokumentasi album yang tersimpan di database.'}
           </p>
         </div>
       ) : (
+        /* Responsive Album Cards Grid: 3 cols on desktop, 2 on tablet, 1 on mobile */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAlbums.map((album) => {
-            const hasCover = Boolean(album.linkSampul && album.linkSampul.trim() !== '');
-            const isCoverBroken = album.linkSampul ? failedImages.has(album.linkSampul) : false;
-            const hasPhotos = Boolean(album.daftarFoto && album.daftarFoto.length > 0);
-
-            return (
-              <article
-                key={album.id}
-                className="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
-              >
-                <div>
-                  {/* Cover Image Area */}
-                  <div className="relative aspect-[16/10] overflow-hidden bg-slate-100 dark:bg-slate-800">
-                    {hasCover && !isCoverBroken ? (
-                      <img
-                        src={album.linkSampul}
-                        alt={album.judul}
-                        loading="lazy"
-                        onError={() => album.linkSampul && markFailed(album.linkSampul)}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                      />
-                    ) : isCoverBroken ? (
-                      <div className="w-full h-full bg-[#0E4A6B]/90 text-white flex flex-col items-center justify-center p-4 text-center">
-                        <AlertCircle className="w-8 h-8 text-[#E5A823] mb-1.5" />
-                        <span className="text-xs font-semibold text-slate-100">
-                          Foto tidak dapat dimuat
-                        </span>
-                      </div>
-                    ) : (
-                      /* Placeholder berlatar warna tema sekolah dengan ikon foto */
-                      <div className="w-full h-full bg-gradient-to-br from-[#0E4A6B] to-[#12587e] dark:from-[#0E4A6B] dark:to-[#0A3550] text-white flex flex-col items-center justify-center p-4 text-center relative">
-                        <div className="p-3.5 rounded-2xl bg-white/10 backdrop-blur-sm mb-2 shadow-inner">
-                          <Camera className="w-7 h-7 text-[#E5A823]" />
-                        </div>
-                        <span className="text-xs font-bold tracking-wider text-slate-100 uppercase">
-                          {data.identitas.singkatan || 'SPENSATA'}
-                        </span>
-                        <span className="text-[11px] text-slate-300 mt-0.5">
-                          Album Google Foto
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Photo count badge if available */}
-                    {hasPhotos && (
-                      <div className="absolute top-3 right-3 bg-slate-950/70 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow">
-                        <ImageIcon className="w-3.5 h-3.5 text-[#E5A823]" />
-                        <span>{album.daftarFoto!.length} Foto</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Card Content */}
-                  <div className="p-5 space-y-3">
-                    {/* Date */}
-                    {album.tanggal && (
-                      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
-                        <Calendar className="w-3.5 h-3.5 text-[#E5A823]" />
-                        <span>{album.tanggal}</span>
-                      </div>
-                    )}
-
-                    {/* Title */}
-                    <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-snug group-hover:text-[#0E4A6B] dark:group-hover:text-[#E5A823] transition-colors">
-                      {album.judul}
-                    </h2>
-
-                    {/* Short Description */}
-                    {album.deskripsi && (
-                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
-                        {album.deskripsi}
-                      </p>
-                    )}
-
-                    {/* Thumbnail Photo Grid (if daftarFoto is filled) */}
-                    {hasPhotos && (
-                      <div className="pt-2">
-                        <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1.5 flex items-center justify-between">
-                          <span>Pratinjau Foto</span>
-                          <span className="text-[10px] text-slate-400">Klik untuk perbesar</span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          {album.daftarFoto!.slice(0, 3).map((fotoUrl, idx) => {
-                            const isPhotoBroken = failedImages.has(fotoUrl);
-                            return (
-                              <button
-                                key={idx}
-                                type="button"
-                                onClick={() => setLightboxState({ album, photoIndex: idx })}
-                                className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:opacity-90 hover:scale-105 transition cursor-pointer"
-                                title="Klik untuk membuka lightbox"
-                              >
-                                {isPhotoBroken ? (
-                                  <div className="w-full h-full bg-[#0E4A6B]/80 flex flex-col items-center justify-center p-1 text-[9px] text-white text-center leading-tight">
-                                    <AlertCircle className="w-3.5 h-3.5 text-[#E5A823] mb-0.5" />
-                                    <span>Gagal</span>
-                                  </div>
-                                ) : (
-                                  <img
-                                    src={fotoUrl}
-                                    alt={`${album.judul} - foto ${idx + 1}`}
-                                    loading="lazy"
-                                    onError={() => markFailed(fotoUrl)}
-                                    className="w-full h-full object-cover"
-                                  />
-                                )}
-                                {idx === 2 && album.daftarFoto!.length > 3 && (
-                                  <div className="absolute inset-0 bg-slate-950/70 text-white font-bold text-xs flex items-center justify-center">
-                                    +{album.daftarFoto!.length - 3}
-                                  </div>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Card Action: Button to open album on Google Photos */}
-                <div className="p-5 pt-0 mt-2 space-y-2">
-                  <a
-                    href={album.linkAlbum}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0E4A6B] hover:bg-[#0a3852] dark:bg-[#E5A823] dark:hover:bg-[#d49818] text-white dark:text-slate-950 text-xs sm:text-sm font-bold shadow-sm transition cursor-pointer"
-                  >
-                    <span>Lihat Album di Google Foto</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-
-                  {hasPhotos && (
-                    <button
-                      type="button"
-                      onClick={() => setLightboxState({ album, photoIndex: 0 })}
-                      className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-[#0E4A6B] dark:hover:text-[#E5A823] transition cursor-pointer"
-                    >
-                      <ImageIcon className="w-3.5 h-3.5" />
-                      <span>Buka Galeri Foto ({album.daftarFoto!.length} Foto)</span>
-                    </button>
-                  )}
-                </div>
-              </article>
-            );
-          })}
+          {filteredAlbums.map((album) => (
+            <GaleriAlbumCard
+              key={album.id}
+              album={album}
+              schoolShortName={data.identitas.singkatan || 'SPENSATA'}
+              onOpenPhoto={(alb, idx) => {
+                setLightboxState({ album: alb, photoIndex: idx });
+              }}
+            />
+          ))}
         </div>
       )}
 
@@ -428,12 +345,12 @@ export const GalleryPhotoPage: React.FC<GalleryPhotoPageProps> = () => {
 
             {/* Current Image */}
             <div className="max-w-4xl max-h-[75vh] w-full h-full flex items-center justify-center">
-              {failedImages.has(lightboxState.album.daftarFoto[lightboxState.photoIndex]) ? (
+              {failedLightboxImages.has(lightboxState.album.daftarFoto[lightboxState.photoIndex]) ? (
                 <div className="p-8 rounded-2xl bg-slate-900 border border-slate-800 text-center max-w-sm space-y-3">
                   <AlertCircle className="w-10 h-10 text-[#E5A823] mx-auto" />
                   <p className="text-sm font-semibold text-white">Foto tidak dapat dimuat</p>
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    Tautan gambar Google Foto tidak dapat diakses secara langsung. Anda dapat melihat album lengkap di Google Foto.
+                    Tautan gambar Google Foto tidak dapat diakses langsung. Anda tetap dapat membuka album lengkap di Google Foto.
                   </p>
                   <a
                     href={lightboxState.album.linkAlbum}
@@ -449,9 +366,10 @@ export const GalleryPhotoPage: React.FC<GalleryPhotoPageProps> = () => {
                 <img
                   src={lightboxState.album.daftarFoto[lightboxState.photoIndex]}
                   alt={`${lightboxState.album.judul} - foto ${lightboxState.photoIndex + 1}`}
+                  referrerPolicy="no-referrer"
                   loading="lazy"
                   onError={() =>
-                    markFailed(lightboxState.album.daftarFoto![lightboxState.photoIndex])
+                    markLightboxFailed(lightboxState.album.daftarFoto![lightboxState.photoIndex])
                   }
                   className="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl"
                 />
@@ -489,6 +407,7 @@ export const GalleryPhotoPage: React.FC<GalleryPhotoPageProps> = () => {
                     <img
                       src={fotoUrl}
                       alt={`Thumbnail ${idx + 1}`}
+                      referrerPolicy="no-referrer"
                       loading="lazy"
                       className="w-full h-full object-cover"
                     />

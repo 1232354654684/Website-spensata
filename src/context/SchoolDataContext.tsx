@@ -170,7 +170,7 @@ export const SchoolDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     );
 
     unsubs.push(
-      dataService.subscribe<GaleriAlbumItem[]>('galeri', (val) => {
+      dataService.subscribeGaleri((val) => {
         if (Array.isArray(val)) {
           setData((prev) => ({ ...prev, galeri: val }));
         }
