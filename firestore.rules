@@ -1,12 +1,15 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Hanya akun admin@spensata.sch.id yang berhak sebagai admin
+    // Hanya admin yang berhak menulis (email pemilik aplikasi ardiansyahroni017@gmail.com & admin@spensata.sch.id)
     function isAdmin() {
-      return request.auth != null && request.auth.token.email.lower() == 'admin@spensata.sch.id';
+      return request.auth != null && (
+        request.auth.token.email.lower() == 'ardiansyahroni017@gmail.com' ||
+        request.auth.token.email.lower() == 'admin@spensata.sch.id'
+      );
     }
 
-    // Dokumen tunggal: publik boleh membaca, hanya admin admin@spensata.sch.id yang dapat mengubah
+    // Dokumen tunggal: publik boleh membaca, hanya admin yang dapat mengubah
     match /identitas/{docId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -32,7 +35,7 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Koleksi umum: statistik, sarana, heroSlides, galeriFoto, galeriVideo
+    // Koleksi umum: semua orang boleh membaca, hanya admin yang boleh menulis
     match /statistik/{docId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -59,10 +62,9 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Koleksi berita: Publik hanya boleh membaca yang berstatus 'Terbit'
-    // Berita 'Draft' hanya dapat dibaca dan dikelola oleh admin admin@spensata.sch.id
+    // Koleksi berita: Semua orang boleh membaca, hanya admin yang boleh menulis
     match /berita/{docId} {
-      allow read: if resource.data.status == 'Terbit' || isAdmin();
+      allow read: if true;
       allow write: if isAdmin();
     }
   }

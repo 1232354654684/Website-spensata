@@ -16,7 +16,7 @@ import {
   GaleriAlbumItem
 } from '../types';
 import { dataService } from '../services/dataService';
-import { auth, isFirebaseConfigured } from '../services/firebase';
+import { auth, isFirebaseConfigured, firebaseInfo, loginWithGoogle } from '../services/firebase';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 
 interface SchoolDataContextType {
@@ -25,6 +25,11 @@ interface SchoolDataContextType {
   isLoading: boolean;
   isAdmin: boolean;
   currentUser: User | null;
+  firebaseInfo: {
+    projectId: string;
+    firestoreDatabaseId: string;
+  };
+  loginWithGoogle: () => Promise<any>;
   logoutAdmin: () => Promise<void>;
   seedData: (force?: boolean) => Promise<{ success: boolean; message: string }>;
   refreshData: () => void;
@@ -38,6 +43,11 @@ const SchoolDataContext = createContext<SchoolDataContextType>({
   isLoading: false,
   isAdmin: false,
   currentUser: null,
+  firebaseInfo: {
+    projectId: firebaseInfo.projectId,
+    firestoreDatabaseId: firebaseInfo.firestoreDatabaseId
+  },
+  loginWithGoogle: async () => {},
   logoutAdmin: async () => {},
   seedData: async () => ({ success: false, message: '' }),
   refreshData: () => {}
@@ -174,11 +184,15 @@ export const SchoolDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
   }, []);
 
-  const PRIMARY_ADMIN_EMAIL = 'admin@spensata.sch.id';
+  const PRIMARY_ADMIN_EMAILS = [
+    'ardiansyahroni017@gmail.com',
+    'admin@spensata.sch.id'
+  ];
 
   const isAdmin = useMemo(() => {
-    if (currentUser) {
-      return (currentUser.email || '').toLowerCase() === PRIMARY_ADMIN_EMAIL;
+    if (currentUser && currentUser.email) {
+      const email = currentUser.email.toLowerCase().trim();
+      return PRIMARY_ADMIN_EMAILS.includes(email);
     }
     return isDemoAdmin;
   }, [currentUser, isDemoAdmin]);
@@ -211,6 +225,8 @@ export const SchoolDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         isLoading: loading,
         isAdmin,
         currentUser,
+        firebaseInfo,
+        loginWithGoogle,
         logoutAdmin,
         seedData,
         refreshData

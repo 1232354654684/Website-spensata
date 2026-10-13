@@ -110,13 +110,13 @@ export const dataService = {
       try {
         const docRef = doc(db, collectionName, docId);
         await setDoc(docRef, data as any, { merge: true });
-        return;
-      } catch (err) {
-        console.warn(`Firestore set error for ${collectionName}/${docId}:`, err);
+      } catch (err: any) {
+        console.error(`Firestore set error for ${collectionName}/${docId}:`, err);
+        throw new Error(`Gagal menyimpan ke Firestore (${collectionName}/${docId}): ${err?.message || err}`);
       }
     }
 
-    // Local fallback
+    // Local fallback and memory sync
     if (collectionName in localStore) {
       const val = (localStore as any)[collectionName];
       if (Array.isArray(val)) {
@@ -144,26 +144,27 @@ export const dataService = {
    * Add new item to a collection
    */
   async add<T>(collectionName: string, data: T): Promise<string> {
+    let assignedId = (data as any)?.id || `${collectionName}-${Date.now()}`;
     if (isFirebaseConfigured() && db) {
       try {
         const colRef = collection(db, collectionName);
         const docRef = await addDoc(colRef, data as any);
-        return docRef.id;
-      } catch (err) {
-        console.warn(`Firestore add error for ${collectionName}:`, err);
+        assignedId = docRef.id;
+      } catch (err: any) {
+        console.error(`Firestore add error for ${collectionName}:`, err);
+        throw new Error(`Gagal menambahkan data ke Firestore (${collectionName}): ${err?.message || err}`);
       }
     }
 
-    // Local fallback
-    const id = (data as any)?.id || `${collectionName}-${Date.now()}`;
-    const newItem = { ...(data as any), id };
+    // Local fallback and memory sync
+    const newItem = { ...(data as any), id: assignedId };
     if (!Array.isArray((localStore as any)[collectionName])) {
       (localStore as any)[collectionName] = [];
     }
     (localStore as any)[collectionName].push(newItem);
     persistLocalStore();
     notifyLocalListeners(collectionName, (localStore as any)[collectionName]);
-    return id;
+    return assignedId;
   },
 
   /**
@@ -174,13 +175,13 @@ export const dataService = {
       try {
         const docRef = doc(db, collectionName, docId);
         await updateDoc(docRef, data as any);
-        return;
-      } catch (err) {
-        console.warn(`Firestore update error for ${collectionName}/${docId}:`, err);
+      } catch (err: any) {
+        console.error(`Firestore update error for ${collectionName}/${docId}:`, err);
+        throw new Error(`Gagal memperbarui data di Firestore (${collectionName}/${docId}): ${err?.message || err}`);
       }
     }
 
-    // Local fallback
+    // Local fallback and memory sync
     if (collectionName in localStore) {
       const val = (localStore as any)[collectionName];
       if (Array.isArray(val)) {
@@ -208,13 +209,13 @@ export const dataService = {
       try {
         const docRef = doc(db, collectionName, docId);
         await deleteDoc(docRef);
-        return;
-      } catch (err) {
-        console.warn(`Firestore delete error for ${collectionName}/${docId}:`, err);
+      } catch (err: any) {
+        console.error(`Firestore delete error for ${collectionName}/${docId}:`, err);
+        throw new Error(`Gagal menghapus data dari Firestore (${collectionName}/${docId}): ${err?.message || err}`);
       }
     }
 
-    // Local fallback
+    // Local fallback and memory sync
     if (Array.isArray((localStore as any)[collectionName])) {
       (localStore as any)[collectionName] = (localStore as any)[collectionName].filter(
         (item: any) => item.id !== docId

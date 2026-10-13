@@ -1,23 +1,21 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
+import { getAuth, Auth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
+import rawConfig from '../../firebase-applet-config.json';
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || ''
+const config = {
+  apiKey: rawConfig.apiKey || import.meta.env.VITE_FIREBASE_API_KEY || '',
+  authDomain: rawConfig.authDomain || import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
+  projectId: rawConfig.projectId || import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
+  storageBucket: rawConfig.storageBucket || import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: rawConfig.messagingSenderId || import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: rawConfig.appId || import.meta.env.VITE_FIREBASE_APP_ID || '',
+  firestoreDatabaseId: rawConfig.firestoreDatabaseId || import.meta.env.VITE_FIRESTORE_DATABASE_ID || '(default)'
 };
 
 export const isFirebaseConfigured = (): boolean => {
-  return Boolean(
-    firebaseConfig.apiKey &&
-    firebaseConfig.projectId &&
-    firebaseConfig.apiKey !== ''
-  );
+  return Boolean(config.apiKey && config.projectId && config.apiKey !== '');
 };
 
 let app: ReturnType<typeof initializeApp> | null = null;
@@ -27,14 +25,35 @@ let storage: FirebaseStorage | null = null;
 
 if (isFirebaseConfigured()) {
   try {
-    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    app = getApps().length === 0 ? initializeApp(config) : getApp();
     auth = getAuth(app);
-    db = getFirestore(app);
+    // CRITICAL: Always pass firestoreDatabaseId for dedicated provisioned databases
+    db = getFirestore(app, config.firestoreDatabaseId);
     storage = getStorage(app);
   } catch (err) {
     console.warn('Firebase initialization error:', err);
   }
 }
 
-export { app, auth, db, storage };
-export default firebaseConfig;
+export const googleProvider = new GoogleAuthProvider();
+
+export const loginWithGoogle = async () => {
+  if (!auth) throw new Error('Firebase Authentication belum terinisialisasi.');
+  return await signInWithPopup(auth, googleProvider);
+};
+
+export const logoutFirebaseAuth = async () => {
+  if (auth) {
+    await signOut(auth);
+  }
+};
+
+export const firebaseInfo = {
+  projectId: config.projectId,
+  firestoreDatabaseId: config.firestoreDatabaseId,
+  authDomain: config.authDomain,
+  storageBucket: config.storageBucket
+};
+
+export { app, auth, db, storage, config as firebaseConfig };
+export default config;

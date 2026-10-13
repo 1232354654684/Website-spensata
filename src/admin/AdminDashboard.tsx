@@ -25,7 +25,8 @@ import {
   Upload,
   RefreshCw,
   Eye,
-  FileText
+  FileText,
+  Database
 } from 'lucide-react';
 import { useSchoolData } from '../context/SchoolDataContext';
 import { dataService } from '../services/dataService';
@@ -64,7 +65,7 @@ type AdminTab =
   | 'galeriVideo';
 
 export const AdminDashboard: React.FC = () => {
-  const { data, isAdmin, currentUser, logoutAdmin, seedData } = useSchoolData();
+  const { data, isAdmin, currentUser, logoutAdmin, seedData, firebaseInfo } = useSchoolData();
   const [activeTab, setActiveTab] = useState<AdminTab>('ringkasan');
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -354,6 +355,55 @@ export const AdminDashboard: React.FC = () => {
 
       {/* Main Panel Content */}
       <main className="flex-1 p-6 md:p-8 lg:p-10 overflow-y-auto">
+        {/* Banner Koneksi Firebase & Akun Login (User Request 5) */}
+        <div className="mb-6 p-4.5 rounded-2xl bg-slate-950/90 border border-slate-800 shadow-xl">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-[#E5A823]/15 border border-[#E5A823]/30 flex items-center justify-center text-[#E5A823] flex-shrink-0 shadow-inner">
+                <Database className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">
+                    Database Firebase Firestore
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>Terhubung & Aktif</span>
+                  </span>
+                </div>
+                <div className="text-xs text-slate-300 flex flex-wrap items-center gap-x-5 gap-y-1 pt-0.5">
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-slate-400">Project ID:</span>
+                    <code className="text-[#E5A823] font-mono font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                      {firebaseInfo.projectId}
+                    </code>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-slate-400">Database ID:</span>
+                    <code className="text-sky-400 font-mono font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                      {firebaseInfo.firestoreDatabaseId}
+                    </code>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Email yang sedang login */}
+            <div className="flex items-center gap-3 bg-slate-900/90 px-4 py-2.5 rounded-xl border border-slate-800/80 self-start lg:self-auto">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+              <div className="text-xs">
+                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                  Email Admin Login:
+                </div>
+                <div className="font-mono font-bold text-white truncate max-w-xs sm:max-w-md">
+                  {currentUser?.email || (isAdmin ? 'ardiansyahroni017@gmail.com' : 'Belum Login')}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Toast Alerts */}
         {saveStatus && (
           <div className="mb-6 p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm flex items-center gap-2.5 shadow-lg animate-in fade-in">
@@ -628,16 +678,31 @@ export const AdminDashboard: React.FC = () => {
               { key: 'urutan', label: 'Urutan Tampil', type: 'number' }
             ]}
             onAdd={async (item) => {
-              await dataService.add('statistik', item);
-              showSuccess('Statistik berhasil ditambahkan!');
+              try {
+                await dataService.add('statistik', item);
+                showSuccess('Statistik berhasil ditambahkan ke database!');
+              } catch (err: any) {
+                showError(`Gagal menambahkan statistik: ${err?.message || err}`);
+                throw err;
+              }
             }}
             onUpdate={async (id, item) => {
-              await dataService.update('statistik', id, item);
-              showSuccess('Statistik berhasil diperbarui!');
+              try {
+                await dataService.update('statistik', id, item);
+                showSuccess('Statistik berhasil diperbarui di database!');
+              } catch (err: any) {
+                showError(`Gagal memperbarui statistik: ${err?.message || err}`);
+                throw err;
+              }
             }}
             onDelete={async (id) => {
-              await dataService.delete('statistik', id);
-              showSuccess('Statistik berhasil dihapus!');
+              try {
+                await dataService.delete('statistik', id);
+                showSuccess('Statistik berhasil dihapus dari database!');
+              } catch (err: any) {
+                showError(`Gagal menghapus statistik: ${err?.message || err}`);
+                throw err;
+              }
             }}
           />
         )}
@@ -659,16 +724,31 @@ export const AdminDashboard: React.FC = () => {
               { key: 'urutan', label: 'Urutan Tampil', type: 'number' }
             ]}
             onAdd={async (item) => {
-              await dataService.add('sarana', item);
-              showSuccess('Sarana berhasil ditambahkan!');
+              try {
+                await dataService.add('sarana', item);
+                showSuccess('Sarana berhasil ditambahkan ke database!');
+              } catch (err: any) {
+                showError(`Gagal menambahkan sarana: ${err?.message || err}`);
+                throw err;
+              }
             }}
             onUpdate={async (id, item) => {
-              await dataService.update('sarana', id, item);
-              showSuccess('Sarana berhasil diperbarui!');
+              try {
+                await dataService.update('sarana', id, item);
+                showSuccess('Sarana berhasil diperbarui di database!');
+              } catch (err: any) {
+                showError(`Gagal memperbarui sarana: ${err?.message || err}`);
+                throw err;
+              }
             }}
             onDelete={async (id) => {
-              await dataService.delete('sarana', id);
-              showSuccess('Sarana berhasil dihapus!');
+              try {
+                await dataService.delete('sarana', id);
+                showSuccess('Sarana berhasil dihapus dari database!');
+              } catch (err: any) {
+                showError(`Gagal menghapus sarana: ${err?.message || err}`);
+                throw err;
+              }
             }}
           />
         )}
@@ -696,16 +776,31 @@ export const AdminDashboard: React.FC = () => {
               { key: 'urutan', label: 'Urutan Tampil', type: 'number' }
             ]}
             onAdd={async (item) => {
-              await dataService.add('heroSlides', item);
-              showSuccess('Slide banner berhasil ditambahkan!');
+              try {
+                await dataService.add('heroSlides', item);
+                showSuccess('Slide banner berhasil ditambahkan ke database!');
+              } catch (err: any) {
+                showError(`Gagal menambahkan banner: ${err?.message || err}`);
+                throw err;
+              }
             }}
             onUpdate={async (id, item) => {
-              await dataService.update('heroSlides', id, item);
-              showSuccess('Slide banner berhasil diperbarui!');
+              try {
+                await dataService.update('heroSlides', id, item);
+                showSuccess('Slide banner berhasil diperbarui di database!');
+              } catch (err: any) {
+                showError(`Gagal memperbarui banner: ${err?.message || err}`);
+                throw err;
+              }
             }}
             onDelete={async (id) => {
-              await dataService.delete('heroSlides', id);
-              showSuccess('Slide banner berhasil dihapus!');
+              try {
+                await dataService.delete('heroSlides', id);
+                showSuccess('Slide banner berhasil dihapus dari database!');
+              } catch (err: any) {
+                showError(`Gagal menghapus banner: ${err?.message || err}`);
+                throw err;
+              }
             }}
           />
         )}
@@ -757,22 +852,37 @@ export const AdminDashboard: React.FC = () => {
               { key: 'tandaiPopuler', label: 'Tandai sebagai Tulisan Populer', type: 'checkbox' }
             ]}
             onAdd={async (item) => {
-              const slug =
-                item.slug ||
-                item.judul
-                  .toLowerCase()
-                  .replace(/[^a-z0-9]+/g, '-')
-                  .replace(/(^-|-$)+/g, '');
-              await dataService.add('berita', { ...item, slug });
-              showSuccess('Berita berhasil ditambahkan!');
+              try {
+                const slug =
+                  item.slug ||
+                  item.judul
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/(^-|-$)+/g, '');
+                await dataService.add('berita', { ...item, slug });
+                showSuccess('Berita berhasil ditambahkan ke database!');
+              } catch (err: any) {
+                showError(`Gagal menyimpan berita: ${err?.message || err}`);
+                throw err;
+              }
             }}
             onUpdate={async (id, item) => {
-              await dataService.update('berita', id, item);
-              showSuccess('Berita berhasil diperbarui!');
+              try {
+                await dataService.update('berita', id, item);
+                showSuccess('Berita berhasil diperbarui di database!');
+              } catch (err: any) {
+                showError(`Gagal memperbarui berita: ${err?.message || err}`);
+                throw err;
+              }
             }}
             onDelete={async (id) => {
-              await dataService.delete('berita', id);
-              showSuccess('Berita berhasil dihapus!');
+              try {
+                await dataService.delete('berita', id);
+                showSuccess('Berita berhasil dihapus dari database!');
+              } catch (err: any) {
+                showError(`Gagal menghapus berita: ${err?.message || err}`);
+                throw err;
+              }
             }}
           />
         )}
@@ -806,16 +916,31 @@ export const AdminDashboard: React.FC = () => {
               { key: 'urutan', label: 'Urutan Tampil', type: 'number' }
             ]}
             onAdd={async (item) => {
-              await dataService.add('galeriVideo', item);
-              showSuccess('Video galeri berhasil ditambahkan!');
+              try {
+                await dataService.add('galeriVideo', item);
+                showSuccess('Video galeri berhasil ditambahkan ke database!');
+              } catch (err: any) {
+                showError(`Gagal menambahkan video: ${err?.message || err}`);
+                throw err;
+              }
             }}
             onUpdate={async (id, item) => {
-              await dataService.update('galeriVideo', id, item);
-              showSuccess('Video galeri berhasil diperbarui!');
+              try {
+                await dataService.update('galeriVideo', id, item);
+                showSuccess('Video galeri berhasil diperbarui di database!');
+              } catch (err: any) {
+                showError(`Gagal memperbarui video: ${err?.message || err}`);
+                throw err;
+              }
             }}
             onDelete={async (id) => {
-              await dataService.delete('galeriVideo', id);
-              showSuccess('Video galeri berhasil dihapus!');
+              try {
+                await dataService.delete('galeriVideo', id);
+                showSuccess('Video galeri berhasil dihapus dari database!');
+              } catch (err: any) {
+                showError(`Gagal menghapus video: ${err?.message || err}`);
+                throw err;
+              }
             }}
           />
         )}
@@ -1017,6 +1142,7 @@ function CollectionManager<T extends { id?: string }>({
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [formData, setFormData] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const handleOpenAdd = () => {
     const empty: any = {};
@@ -1030,6 +1156,7 @@ function CollectionManager<T extends { id?: string }>({
     setFormData(empty);
     setIsEditing(false);
     setActiveItemId(null);
+    setFormError(null);
     setModalOpen(true);
   };
 
@@ -1037,12 +1164,14 @@ function CollectionManager<T extends { id?: string }>({
     setFormData({ ...item });
     setIsEditing(true);
     setActiveItemId((item as any).id);
+    setFormError(null);
     setModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setFormError(null);
     try {
       if (isEditing && activeItemId) {
         await onUpdate(activeItemId, formData);
@@ -1050,6 +1179,8 @@ function CollectionManager<T extends { id?: string }>({
         await onAdd(formData);
       }
       setModalOpen(false);
+    } catch (err: any) {
+      setFormError(err?.message || 'Gagal menyimpan data ke database.');
     } finally {
       setSubmitting(false);
     }
@@ -1145,6 +1276,13 @@ function CollectionManager<T extends { id?: string }>({
                 ✕
               </button>
             </div>
+
+            {formError && (
+              <div className="mb-4 p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+                <span>{formError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {formFields.map((f) => (
