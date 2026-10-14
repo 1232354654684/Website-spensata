@@ -67,8 +67,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="flex items-center gap-3.5 cursor-pointer group"
             >
               {/* Emblem Logo */}
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0E4A6B] to-[#0A3550] dark:from-[#5FB0DB] dark:to-[#0E4A6B] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform flex-shrink-0">
-                <BookOpen className="w-6 h-6 text-[#E5A823]" />
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center p-0.5 group-hover:scale-105 transition-transform flex-shrink-0">
+                <img
+                  src="/logo-sekolah.png?v=2"
+                  alt="Logo SMP Negeri 1 Tambak"
+                  className="w-full h-full object-contain filter drop-shadow-sm"
+                  referrerPolicy="no-referrer"
+                />
               </div>
 
               <div>

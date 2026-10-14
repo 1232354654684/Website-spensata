@@ -14,6 +14,7 @@ import { ContactPage } from './pages/ContactPage';
 import { ArticleDetailPage } from './pages/ArticleDetailPage';
 import { ArchivePage } from './pages/ArchivePage';
 import { AdminDashboard } from './admin/AdminDashboard';
+import { FaviconManager } from './components/FaviconManager';
 import { SchoolDataProvider, useSchoolData } from './context/SchoolDataContext';
 import { GaleriFotoItem } from './types';
 
@@ -231,6 +232,7 @@ function AppContent() {
 export default function App() {
   return (
     <SchoolDataProvider>
+      <FaviconManager />
       <AppContent />
     </SchoolDataProvider>
   );

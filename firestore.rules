@@ -67,5 +67,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // Koleksi pengaturan situs (termasuk favicon, logo, konfigurasi): publik boleh membaca, hanya admin yang dapat mengubah
+    match /pengaturan/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }

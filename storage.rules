@@ -4,8 +4,11 @@ service firebase.storage {
     match /{allPaths=**} {
       // Publik dapat melihat file gambar yang diunggah
       allow read: if true;
-      // Hanya akun resmi admin@spensata.sch.id yang dapat mengunggah atau menghapus file
-      allow write: if request.auth != null && request.auth.token.email.lower() == 'admin@spensata.sch.id';
+      // Hanya akun resmi admin yang dapat mengunggah atau menghapus file
+      allow write: if request.auth != null && (
+        request.auth.token.email.lower() == 'ardiansyahroni017@gmail.com' ||
+        request.auth.token.email.lower() == 'admin@spensata.sch.id'
+      );
     }
   }
 }

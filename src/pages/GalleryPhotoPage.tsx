@@ -191,7 +191,7 @@ export const GalleryPhotoPage: React.FC<GalleryPhotoPageProps> = () => {
 
           <p className="text-sm sm:text-base text-slate-200 leading-relaxed max-w-2xl">
             Arsip dokumentasi visual beragam kegiatan akademik, perkemahan, upacara, dan prestasi
-            peserta didik {data.identitas.namaSekolah}. Album lengkap tersimpan secara aman di
+            peserta didik {data.identitas.nama}. Album lengkap tersimpan secara aman di
             Google Foto.
           </p>
         </div>

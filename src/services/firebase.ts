@@ -11,7 +11,10 @@ const config = {
   storageBucket: rawConfig.storageBucket || import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
   messagingSenderId: rawConfig.messagingSenderId || import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
   appId: rawConfig.appId || import.meta.env.VITE_FIREBASE_APP_ID || '',
-  firestoreDatabaseId: rawConfig.firestoreDatabaseId || import.meta.env.VITE_FIRESTORE_DATABASE_ID || '(default)'
+  firestoreDatabaseId:
+    rawConfig.firestoreDatabaseId ||
+    import.meta.env.VITE_FIRESTORE_DATABASE_ID ||
+    'ai-studio-smpnegeri1tambak-a2bce7a3-f450-4f56-aa26-535278420f63'
 };
 
 export const isFirebaseConfigured = (): boolean => {

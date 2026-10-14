@@ -16,7 +16,7 @@ import {
   uploadBytes,
   getDownloadURL
 } from 'firebase/storage';
-import { db, storage, isFirebaseConfigured } from './firebase';
+import { db, storage, isFirebaseConfigured, auth } from './firebase';
 import rawSeedData from '../../seed-data.json';
 import { SchoolStoreData, GaleriAlbumItem } from '../types';
 
@@ -169,12 +169,35 @@ export const dataService = {
    */
   async set<T>(collectionName: string, docId: string, data: Partial<T>): Promise<void> {
     if (isFirebaseConfigured() && db) {
+      // Validasi sesi Firebase Auth sebelum menulis
+      if (!auth?.currentUser) {
+        const authErr: any = new Error('Sesi login habis, silakan login ulang.');
+        authErr.code = 'permission-denied';
+        throw authErr;
+      }
+
       try {
         const docRef = doc(db, collectionName, docId);
         await setDoc(docRef, data as any, { merge: true });
       } catch (err: any) {
-        console.error(`Firestore set error for ${collectionName}/${docId}:`, err);
-        throw new Error(`Gagal menyimpan ke Firestore (${collectionName}/${docId}): ${err?.message || err}`);
+        console.error(`Firestore set error for ${collectionName}/${docId}:`, {
+          code: err?.code,
+          message: err?.message,
+          user: auth?.currentUser?.email
+        });
+        const errCode = err?.code || '';
+        const errMsg = err?.message || String(err);
+        if (errCode === 'permission-denied' || errMsg.includes('insufficient permissions')) {
+          const userEmail = auth?.currentUser?.email;
+          const permErr: any = new Error(
+            userEmail
+              ? `Izin ditolak oleh Firebase Security Rules. Akun "${userEmail}" tidak memiliki hak akses administrator untuk mengubah ${collectionName}/${docId}.`
+              : 'Sesi login habis, silakan login ulang.'
+          );
+          permErr.code = 'permission-denied';
+          throw permErr;
+        }
+        throw new Error(`Gagal menyimpan ke Firestore (${collectionName}/${docId}): ${errMsg}`);
       }
     }
 
@@ -230,13 +253,115 @@ export const dataService = {
   },
 
   /**
-   * Update existing document
+   * Check if a document exists in Firestore or local store
+   */
+  async exists(collectionName: string, docId: string): Promise<boolean> {
+    if (isFirebaseConfigured() && db) {
+      try {
+        const docRef = doc(db, collectionName, docId);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          return true;
+        }
+      } catch (err) {
+        console.warn(`Firestore check exists error for ${collectionName}/${docId}:`, err);
+      }
+    }
+
+    // Local fallback check
+    if (collectionName in localStore) {
+      const val = (localStore as any)[collectionName];
+      if (Array.isArray(val)) {
+        return val.some((item: any) => item.id === docId);
+      }
+    }
+    return false;
+  },
+
+  /**
+   * Save website favicon configuration to Firestore collection 'pengaturan', doc 'situs'
+   */
+  async saveFavicon(faviconUrl: string, faviconUpdatedAt = Date.now()): Promise<void> {
+    if (isFirebaseConfigured() && !auth?.currentUser) {
+      const authErr: any = new Error('Sesi login habis, silakan login ulang.');
+      authErr.code = 'permission-denied';
+      throw authErr;
+    }
+    await this.set('pengaturan', 'situs', {
+      faviconUrl,
+      faviconUpdatedAt
+    });
+  },
+
+  /**
+   * Reset website favicon configuration back to default
+   */
+  async resetFavicon(): Promise<void> {
+    if (isFirebaseConfigured() && !auth?.currentUser) {
+      const authErr: any = new Error('Sesi login habis, silakan login ulang.');
+      authErr.code = 'permission-denied';
+      throw authErr;
+    }
+    await this.set('pengaturan', 'situs', {
+      faviconUrl: '',
+      faviconUpdatedAt: Date.now()
+    });
+  },
+
+  /**
+   * Sync initial seed items for 'berita' (post-58, post-59, etc.) to Firestore.
+   * Uses setDoc with { merge: true } to preserve or create documents with their exact IDs.
+   */
+  async syncInitialBerita(force = false): Promise<{ synced: number; total: number; message: string }> {
+    const seedNews: any[] = (rawSeedData as any).berita || [];
+    let synced = 0;
+
+    if (isFirebaseConfigured() && db) {
+      try {
+        for (const item of seedNews) {
+          const itemId = item.id;
+          if (!itemId) continue;
+          const docRef = doc(db, 'berita', itemId);
+          if (force) {
+            await setDoc(docRef, item, { merge: true });
+            synced++;
+          } else {
+            const snap = await getDoc(docRef);
+            if (!snap.exists()) {
+              await setDoc(docRef, item, { merge: true });
+              synced++;
+            }
+          }
+        }
+        return {
+          synced,
+          total: seedNews.length,
+          message: `Berhasil menyinkronkan ${synced} dari ${seedNews.length} berita awal ke Firestore.`
+        };
+      } catch (err: any) {
+        console.error('Error in syncInitialBerita:', err);
+        throw new Error(`Gagal menyinkronkan berita awal ke Firestore: ${err?.message || err}`);
+      }
+    }
+
+    return {
+      synced: seedNews.length,
+      total: seedNews.length,
+      message: 'Berita awal tersedia di penyimpanan lokal.'
+    };
+  },
+
+  /**
+   * Update existing document using setDoc with { merge: true }
+   * This guarantees that if the document does not yet exist in Firestore,
+   * it will be automatically created without error, and existing fields are merged.
    */
   async update<T>(collectionName: string, docId: string, data: Partial<T>): Promise<void> {
     if (isFirebaseConfigured() && db) {
       try {
         const docRef = doc(db, collectionName, docId);
-        await updateDoc(docRef, data as any);
+        // Requirement 1: Use setDoc with { merge: true } instead of updateDoc
+        await setDoc(docRef, data as any, { merge: true });
       } catch (err: any) {
         console.error(`Firestore update error for ${collectionName}/${docId}:`, err);
         throw new Error(`Gagal memperbarui data di Firestore (${collectionName}/${docId}): ${err?.message || err}`);
@@ -249,7 +374,9 @@ export const dataService = {
       if (Array.isArray(val)) {
         const idx = val.findIndex((item: any) => item.id === docId);
         if (idx >= 0) {
-          val[idx] = { ...val[idx], ...data };
+          val[idx] = { ...val[idx], ...data, id: docId };
+        } else {
+          val.push({ ...data, id: docId });
         }
       } else {
         (localStore as any)[collectionName] = { ...val, ...data };
@@ -323,6 +450,7 @@ export const dataService = {
         } else {
           const colRef = collection(db, collectionName);
           const q = query(colRef);
+          let initialReceived = false;
           const unsubscribe = onSnapshot(
             q,
             (snap) => {
@@ -330,11 +458,19 @@ export const dataService = {
                 const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
                 callback(items as unknown as T);
               } else {
-                // If empty in firestore, provide initial seed fallback
-                if (collectionName in localStore) {
+                // If firestore collection is completely empty:
+                // For 'berita', auto-seed initial news items so post-58 etc. exist in Firestore!
+                if (!initialReceived && collectionName === 'berita') {
+                  dataService.syncInitialBerita(false).catch((e) => console.warn('Auto sync berita:', e));
+                }
+                // Provide initial seed fallback on first load, or empty array if explicitly emptied
+                if (!initialReceived && collectionName in localStore) {
                   callback((localStore as any)[collectionName] as T);
+                } else {
+                  callback([] as unknown as T);
                 }
               }
+              initialReceived = true;
             },
             (error) => {
               console.warn(`Firestore subscription error on ${collectionName}:`, error);
@@ -436,27 +572,36 @@ export const dataService = {
   },
 
   /**
-   * Upload image file to Firebase Storage with local DataURL fallback
+   * Upload image file or compressed Blob to Firebase Storage with local DataURL fallback
    */
-  async uploadFile(file: File, folder = 'uploads'): Promise<string> {
+  async uploadFile(fileOrBlob: File | Blob, folder = 'uploads', customFileName?: string): Promise<string> {
     if (isFirebaseConfigured() && storage) {
       try {
-        const cleanName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        const isFile = fileOrBlob instanceof File;
+        const ext = fileOrBlob.type === 'image/png' ? 'png' : fileOrBlob.type === 'image/webp' ? 'webp' : 'jpg';
+        const rawName = customFileName || (isFile ? (fileOrBlob as File).name : `photo-${Date.now()}.${ext}`);
+        const cleanName = `${Date.now()}-${rawName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
         const fileRef = ref(storage, `${folder}/${cleanName}`);
-        await uploadBytes(fileRef, file);
+        
+        await uploadBytes(fileRef, fileOrBlob, {
+          contentType: fileOrBlob.type || 'image/jpeg'
+        });
         const url = await getDownloadURL(fileRef);
+        console.info('Firebase Storage upload success:', url);
         return url;
-      } catch (err) {
-        console.warn('Storage upload error, falling back to local DataURL:', err);
+      } catch (err: any) {
+        console.warn(
+          `Firebase Storage upload failed (code: ${err?.code || 'unknown'}, message: ${err?.message || err}). Falling back to Base64 Data URL.`
+        );
       }
     }
 
-    // Fallback: convert file to Base64 Data URL for instant preview & persistence
+    // Fallback: convert file or compressed blob to Base64 Data URL
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+      reader.onerror = (e) => reject(new Error('Gagal mengonversi gambar ke Base64: ' + e));
+      reader.readAsDataURL(fileOrBlob);
     });
   },
 
@@ -499,20 +644,34 @@ export const dataService = {
           const docRef = doc(db, docItem.col, 'info');
           const snap = await getDoc(docRef);
           if (force || !snap.exists()) {
-            await setDoc(docRef, docItem.data);
+            await setDoc(docRef, docItem.data, { merge: true });
             count++;
           }
         }
 
         // Seed collections
         for (const colItem of collections) {
-          const colRef = collection(db, colItem.col);
-          const snap = await getDocs(colRef);
-          if (force || snap.empty) {
+          if (colItem.col === 'berita') {
             for (const item of colItem.items) {
-              const itemId = (item as any).id || `${colItem.col}-${Math.random().toString(36).substring(2, 9)}`;
-              await setDoc(doc(db, colItem.col, itemId), item);
-              count++;
+              const itemId = (item as any).id;
+              if (itemId) {
+                const docRef = doc(db, 'berita', itemId);
+                const docSnap = await getDoc(docRef);
+                if (force || !docSnap.exists()) {
+                  await setDoc(docRef, item, { merge: true });
+                  count++;
+                }
+              }
+            }
+          } else {
+            const colRef = collection(db, colItem.col);
+            const snap = await getDocs(colRef);
+            if (force || snap.empty) {
+              for (const item of colItem.items) {
+                const itemId = (item as any).id || `${colItem.col}-${Math.random().toString(36).substring(2, 9)}`;
+                await setDoc(doc(db, colItem.col, itemId), item, { merge: true });
+                count++;
+              }
             }
           }
         }

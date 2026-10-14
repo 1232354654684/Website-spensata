@@ -16,6 +16,7 @@ import { GaleriAlbumCard } from '../components/GaleriAlbumCard';
 import { useSchoolData } from '../context/SchoolDataContext';
 import { dataService } from '../services/dataService';
 import { GaleriAlbumItem, GaleriFotoItem } from '../types';
+import { normalizeImageUrl, DEFAULT_KEPSEK_PLACEHOLDER } from '../utils/imageHelper';
 
 /**
  * KONFIGURASI JUMLAH BERITA TERBARU DI BERANDA
@@ -146,10 +147,18 @@ export const HomePage: React.FC<HomePageProps> = ({
         >
           <div className="flex flex-col md:flex-row items-center gap-6 sm:gap-8">
             <div className="flex-shrink-0 text-center">
-              <div className="relative w-28 h-28 sm:w-32 sm:h-32 mx-auto rounded-full overflow-hidden ring-4 ring-[#0E4A6B] dark:ring-[#E5A823] shadow-md">
+              <div className="relative w-28 h-28 sm:w-32 sm:h-32 mx-auto rounded-full overflow-hidden ring-4 ring-[#0E4A6B] dark:ring-[#E5A823] shadow-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                 <img
-                  src={data.kepalaSekolah.foto}
+                  src={normalizeImageUrl(data.kepalaSekolah.foto) || DEFAULT_KEPSEK_PLACEHOLDER}
                   alt={data.kepalaSekolah.nama}
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    if (target.src !== DEFAULT_KEPSEK_PLACEHOLDER) {
+                      target.src = DEFAULT_KEPSEK_PLACEHOLDER;
+                    }
+                  }}
                   className="w-full h-full object-cover"
                 />
               </div>

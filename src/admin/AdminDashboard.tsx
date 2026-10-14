@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShieldCheck,
   LayoutDashboard,
@@ -26,12 +26,16 @@ import {
   RefreshCw,
   Eye,
   FileText,
-  Database
+  Database,
+  Globe
 } from 'lucide-react';
 import { useSchoolData } from '../context/SchoolDataContext';
 import { dataService } from '../services/dataService';
 import { isFirebaseConfigured } from '../services/firebase';
 import { AdminLogin } from './AdminLogin';
+import { AdminImageUploadField } from './AdminImageUploadField';
+import { AdminFaviconManager } from './AdminFaviconManager';
+import { validateImageFile, compressImageClientSide } from '../utils/imageHelper';
 import {
   SchoolIdentity,
   Headmaster,
@@ -62,7 +66,8 @@ type AdminTab =
   | 'berita'
   | 'kelolaGaleri'
   | 'galeriFoto'
-  | 'galeriVideo';
+  | 'galeriVideo'
+  | 'favicon';
 
 export const AdminDashboard: React.FC = () => {
   const { data, isAdmin, currentUser, logoutAdmin, seedData, firebaseInfo } = useSchoolData();
@@ -70,6 +75,15 @@ export const AdminDashboard: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Auto-sync initial berita items (like post-58) to Firestore if not yet present
+  useEffect(() => {
+    if (isAdmin && isFirebaseConfigured()) {
+      dataService.syncInitialBerita(false).catch((err) => {
+        console.warn('Initial berita background sync check:', err);
+      });
+    }
+  }, [isAdmin]);
 
   // Modals state for collection items
   const [editingItem, setEditingItem] = useState<{
@@ -98,13 +112,20 @@ export const AdminDashboard: React.FC = () => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, onUrlReady: (url: string) => void) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      showError(validation.error || 'Format file tidak valid.');
+      return;
+    }
     try {
       setIsSaving(true);
-      const url = await dataService.uploadFile(file, 'images');
+      const compressed = await compressImageClientSide(file, 800, 0.8);
+      const url = await dataService.uploadFile(compressed.blob, 'images', file.name);
       onUrlReady(url);
       showSuccess('Gambar berhasil diunggah!');
     } catch (err: any) {
-      showError('Gagal mengunggah gambar: ' + (err?.message || err));
+      console.error('Upload image error:', err);
+      showError(`Gagal mengunggah gambar: [${err?.code || 'ERROR'}] ${err?.message || err}`);
     } finally {
       setIsSaving(false);
     }
@@ -115,9 +136,15 @@ export const AdminDashboard: React.FC = () => {
     try {
       setIsSaving(true);
       await dataService.set(col, 'info', docData);
-      showSuccess(`Data ${col} berhasil disimpan!`);
+      showSuccess(`Data ${col} berhasil disimpan ke Firestore!`);
     } catch (err: any) {
-      showError(`Gagal menyimpan: ${err?.message || err}`);
+      console.error(`Gagal menyimpan dokumen ${col}:`, {
+        code: err?.code,
+        message: err?.message,
+        stack: err?.stack,
+        raw: err
+      });
+      showError(`Gagal menyimpan ${col}: [${err?.code || 'SAVE_ERROR'}] ${err?.message || err}`);
     } finally {
       setIsSaving(false);
     }
@@ -323,6 +350,22 @@ export const AdminDashboard: React.FC = () => {
               <span className="ml-auto text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">
                 {data.galeriVideo.length}
               </span>
+            </button>
+
+            <div className="pt-2 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Pengaturan Situs
+            </div>
+
+            <button
+              onClick={() => setActiveTab('favicon')}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-medium transition-colors cursor-pointer ${
+                activeTab === 'favicon'
+                  ? 'bg-[#0E4A6B] text-white'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Globe className="w-4 h-4 text-[#E5A823]" />
+              <span>Favicon Tab Browser</span>
             </button>
           </nav>
         </div>
@@ -660,6 +703,7 @@ export const AdminDashboard: React.FC = () => {
         {/* TAB 8: STATISTIK (KOLEKSI) */}
         {activeTab === 'statistik' && (
           <CollectionManager<StatistikItem>
+            collectionName="statistik"
             title="Statistik Sekolah (Sekolah dalam Angka)"
             description="Angka siswa, GTK, rombel, dan ekstrakurikuler."
             items={data.statistik}
@@ -710,6 +754,7 @@ export const AdminDashboard: React.FC = () => {
         {/* TAB 9: SARANA & FASILITAS (KOLEKSI) */}
         {activeTab === 'sarana' && (
           <CollectionManager<SaranaItem>
+            collectionName="sarana"
             title="Sarana & Prasarana"
             description="Fasilitas penunjang belajar, laboratorium, dan ruang pendukung."
             items={data.sarana}
@@ -756,6 +801,7 @@ export const AdminDashboard: React.FC = () => {
         {/* TAB 10: HERO SLIDES (KOLEKSI) */}
         {activeTab === 'heroSlides' && (
           <CollectionManager<HeroSlideItem>
+            collectionName="heroSlides"
             title="Slide Hero Beranda"
             description="Banner gambar slider utama di bagian teratas beranda."
             items={data.heroSlides}
@@ -808,9 +854,32 @@ export const AdminDashboard: React.FC = () => {
         {/* TAB 11: BERITA & PUBLIKASI (KOLEKSI) */}
         {activeTab === 'berita' && (
           <CollectionManager<BeritaItem>
+            collectionName="berita"
             title="Berita & Artikel Publikasi"
-            description="Kelola warta, pengumuman, dan artikel sekolah. Draft tidak terbaca publik."
+            description="Kelola warta, pengumuman, dan artikel sekolah. Terhubung langsung dengan Firestore realtime."
             items={data.berita}
+            extraAction={
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    setIsSaving(true);
+                    const res = await dataService.syncInitialBerita(true);
+                    showSuccess(res.message);
+                  } catch (err: any) {
+                    showError(`Gagal menyinkronkan: ${err?.message || err}`);
+                  } finally {
+                    setIsSaving(false);
+                  }
+                }}
+                disabled={isSaving}
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5 shadow cursor-pointer disabled:opacity-50"
+                title="Tulis ulang atau lengkapi seluruh data berita awal (post-58, post-57, dll) ke database Firestore"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-[#E5A823] ${isSaving ? 'animate-spin' : ''}`} />
+                <span>Sinkronkan Berita Awal (post-58, dll)</span>
+              </button>
+            }
             columns={[
               { key: 'judul', label: 'Judul Berita' },
               { key: 'tanggal', label: 'Tanggal' },
@@ -899,6 +968,7 @@ export const AdminDashboard: React.FC = () => {
         {/* TAB 13: GALERI VIDEO (KOLEKSI) */}
         {activeTab === 'galeriVideo' && (
           <CollectionManager<GaleriVideoItem>
+            collectionName="galeriVideo"
             title="Galeri Video"
             description="Tayangan video kegiatan sekolah dari YouTube."
             items={data.galeriVideo}
@@ -944,6 +1014,9 @@ export const AdminDashboard: React.FC = () => {
             }}
           />
         )}
+
+        {/* TAB 14: PENGATURAN FAVICON SITUS */}
+        {activeTab === 'favicon' && <AdminFaviconManager />}
       </main>
     </div>
   );
@@ -1011,13 +1084,15 @@ const DocEditForm: React.FC<{
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {fields.map((f) => {
-            const isFullWidth = f.type === 'textarea' || f.type === 'paragraphList';
+            const isFullWidth = f.type === 'textarea' || f.type === 'paragraphList' || f.type === 'image';
 
             return (
               <div key={f.key} className={isFullWidth ? 'md:col-span-2' : ''}>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  {f.label} {f.required && <span className="text-rose-400">*</span>}
-                </label>
+                {f.type !== 'image' && (
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    {f.label} {f.required && <span className="text-rose-400">*</span>}
+                  </label>
+                )}
 
                 {f.type === 'text' || f.type === 'email' || f.type === 'number' ? (
                   <input
@@ -1054,43 +1129,14 @@ const DocEditForm: React.FC<{
                     </p>
                   </div>
                 ) : f.type === 'image' ? (
-                  <div className="space-y-3">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        required={f.required}
-                        value={formData[f.key] ?? ''}
-                        onChange={(e) => handleChange(f.key, e.target.value)}
-                        placeholder="https://images.unsplash.com/..."
-                        className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-xs sm:text-sm text-white focus:outline-none focus:border-[#E5A823]"
-                      />
-                      <label className="px-3.5 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-xs text-white font-medium flex items-center gap-1.5 cursor-pointer">
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>Upload</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const url = await dataService.uploadFile(file);
-                              handleChange(f.key, url);
-                            }
-                          }}
-                        />
-                      </label>
-                    </div>
-                    {formData[f.key] && (
-                      <div className="w-32 h-20 rounded-xl overflow-hidden border border-slate-700 bg-slate-950">
-                        <img
-                          src={formData[f.key]}
-                          alt="Pratinjau"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                  </div>
+                  <AdminImageUploadField
+                    label={f.label}
+                    value={formData[f.key] ?? ''}
+                    onChange={(newUrl) => handleChange(f.key, newUrl)}
+                    required={f.required}
+                    folder={f.key === 'foto' ? 'kepalaSekolah' : 'images'}
+                    isKepalaSekolah={f.key === 'foto'}
+                  />
                 ) : null}
               </div>
             );
@@ -1126,7 +1172,9 @@ function CollectionManager<T extends { id?: string }>({
   formFields,
   onAdd,
   onUpdate,
-  onDelete
+  onDelete,
+  collectionName,
+  extraAction
 }: {
   title: string;
   description: string;
@@ -1136,6 +1184,8 @@ function CollectionManager<T extends { id?: string }>({
   onAdd: (item: any) => Promise<void>;
   onUpdate: (id: string, item: any) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  collectionName?: string;
+  extraAction?: React.ReactNode;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -1143,6 +1193,10 @@ function CollectionManager<T extends { id?: string }>({
   const [formData, setFormData] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [docNotFoundModal, setDocNotFoundModal] = useState<{
+    id: string;
+    data: any;
+  } | null>(null);
 
   const handleOpenAdd = () => {
     const empty: any = {};
@@ -1157,6 +1211,7 @@ function CollectionManager<T extends { id?: string }>({
     setIsEditing(false);
     setActiveItemId(null);
     setFormError(null);
+    setDocNotFoundModal(null);
     setModalOpen(true);
   };
 
@@ -1165,6 +1220,7 @@ function CollectionManager<T extends { id?: string }>({
     setIsEditing(true);
     setActiveItemId((item as any).id);
     setFormError(null);
+    setDocNotFoundModal(null);
     setModalOpen(true);
   };
 
@@ -1174,6 +1230,18 @@ function CollectionManager<T extends { id?: string }>({
     setFormError(null);
     try {
       if (isEditing && activeItemId) {
+        // Requirement 4: Check if document exists before saving update
+        if (collectionName) {
+          const docExists = await dataService.exists(collectionName, activeItemId);
+          if (!docExists) {
+            setDocNotFoundModal({
+              id: activeItemId,
+              data: { ...formData }
+            });
+            setSubmitting(false);
+            return;
+          }
+        }
         await onUpdate(activeItemId, formData);
       } else {
         await onAdd(formData);
@@ -1193,13 +1261,16 @@ function CollectionManager<T extends { id?: string }>({
           <h2 className="text-xl font-bold text-white tracking-tight">{title}</h2>
           <p className="text-xs text-slate-400 mt-1">{description}</p>
         </div>
-        <button
-          onClick={handleOpenAdd}
-          className="px-4 py-2.5 rounded-xl font-bold text-xs bg-[#E5A823] text-slate-900 hover:bg-[#d49818] transition flex items-center justify-center gap-1.5 shadow cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Tambah Item Baru</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {extraAction}
+          <button
+            onClick={handleOpenAdd}
+            className="px-4 py-2.5 rounded-xl font-bold text-xs bg-[#E5A823] text-slate-900 hover:bg-[#d49818] transition flex items-center justify-center gap-1.5 shadow cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Tambah Item Baru</span>
+          </button>
+        </div>
       </div>
 
       {/* Tabel Data */}
@@ -1353,43 +1424,14 @@ function CollectionManager<T extends { id?: string }>({
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-xs sm:text-sm text-white focus:outline-none focus:border-[#E5A823] font-mono"
                     />
                   ) : f.type === 'image' ? (
-                    <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          required={f.required}
-                          value={formData[f.key] ?? ''}
-                          onChange={(e) => setFormData({ ...formData, [f.key]: e.target.value })}
-                          placeholder="https://..."
-                          className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-[#E5A823]"
-                        />
-                        <label className="px-3 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-xs text-white font-medium flex items-center gap-1.5 cursor-pointer">
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Pilih Foto</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const url = await dataService.uploadFile(file);
-                                setFormData({ ...formData, [f.key]: url });
-                              }
-                            }}
-                          />
-                        </label>
-                      </div>
-                      {formData[f.key] && (
-                        <div className="w-24 h-16 rounded-lg overflow-hidden border border-slate-700 bg-black">
-                          <img
-                            src={formData[f.key]}
-                            alt="Pratinjau"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                    </div>
+                    <AdminImageUploadField
+                      label={f.label}
+                      value={formData[f.key] ?? ''}
+                      onChange={(newUrl) => setFormData({ ...formData, [f.key]: newUrl })}
+                      required={f.required}
+                      folder={collectionName || 'koleksi'}
+                      placeholder="https://... atau tempel tautan Google Drive"
+                    />
                   ) : null}
                 </div>
               ))}
@@ -1412,6 +1454,59 @@ function CollectionManager<T extends { id?: string }>({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Penanganan Dokumen yang Sudah Dihapus (Requirement 4) */}
+      {docNotFoundModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-slate-900 border border-amber-500/50 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-white tracking-tight">
+                {title.includes('Berita') ? 'Berita' : title} Tidak Ditemukan di Database
+              </h4>
+              <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                Dokumen dengan ID <code className="text-[#E5A823] font-mono bg-slate-800 px-1.5 py-0.5 rounded">{docNotFoundModal.id}</code> tidak ditemukan di database Firestore (kemungkinan telah dihapus dari sesi lain atau belum tersimpan).
+              </p>
+              <p className="text-xs text-slate-400 mt-2">
+                Simpan sebagai {title.includes('Berita') ? 'berita' : 'data'} baru?
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setDocNotFoundModal(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setSubmitting(true);
+                  try {
+                    await onAdd(docNotFoundModal.data);
+                    setDocNotFoundModal(null);
+                    setModalOpen(false);
+                  } catch (err: any) {
+                    setFormError(`Gagal membuat data baru: ${err?.message || err}`);
+                    setDocNotFoundModal(null);
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+                disabled={submitting}
+                className="px-4 py-2 rounded-xl bg-[#E5A823] hover:bg-[#d49818] text-xs font-bold text-slate-900 transition flex items-center gap-1.5 shadow cursor-pointer disabled:opacity-50"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Simpan sebagai {title.includes('Berita') ? 'Berita' : 'Data'} Baru</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

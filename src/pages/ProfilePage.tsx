@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { useSchoolData } from '../context/SchoolDataContext';
+import { normalizeImageUrl, DEFAULT_KEPSEK_PLACEHOLDER } from '../utils/imageHelper';
 
 export const ProfilePage: React.FC = () => {
   const { data } = useSchoolData();
@@ -45,10 +46,18 @@ export const ProfilePage: React.FC = () => {
         <section className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
             <div className="md:col-span-4 text-center">
-              <div className="relative w-36 h-36 mx-auto mb-4 rounded-full overflow-hidden ring-4 ring-[#0E4A6B] dark:ring-[#E5A823] shadow-lg">
+              <div className="relative w-36 h-36 mx-auto mb-4 rounded-full overflow-hidden ring-4 ring-[#0E4A6B] dark:ring-[#E5A823] shadow-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                 <img
-                  src={data.kepalaSekolah.foto}
+                  src={normalizeImageUrl(data.kepalaSekolah.foto) || DEFAULT_KEPSEK_PLACEHOLDER}
                   alt={data.kepalaSekolah.nama}
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    if (target.src !== DEFAULT_KEPSEK_PLACEHOLDER) {
+                      target.src = DEFAULT_KEPSEK_PLACEHOLDER;
+                    }
+                  }}
                   className="w-full h-full object-cover"
                 />
               </div>

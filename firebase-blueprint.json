@@ -226,6 +226,10 @@
     "/galeriVideo/{id}": {
       "schema": "galeriVideo",
       "description": "Koleksi tayangan video kegiatan sekolah"
+    },
+    "/pengaturan/{id}": {
+      "schema": "pengaturan",
+      "description": "Dokumen pengaturan situs (favicon, logo, dll)"
     }
   }
 }

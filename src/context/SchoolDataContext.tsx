@@ -29,10 +29,66 @@ interface SchoolDataContextType {
     projectId: string;
     firestoreDatabaseId: string;
   };
+  faviconConfig: {
+    faviconUrl: string;
+    faviconUpdatedAt: number;
+  };
   loginWithGoogle: () => Promise<any>;
   logoutAdmin: () => Promise<void>;
   seedData: (force?: boolean) => Promise<{ success: boolean; message: string }>;
   refreshData: () => void;
+  saveFavicon: (url: string) => Promise<void>;
+  resetFavicon: () => Promise<void>;
+}
+
+/**
+ * Dynamically updates or creates <link rel="icon"> and <link rel="apple-touch-icon"> in document.head
+ */
+export function applyFaviconToDocument(rawUrl?: string, updatedAt?: number) {
+  if (typeof document === 'undefined') return;
+
+  const defaultFavicon = '/favicon.png?v=2';
+  let targetHref = defaultFavicon;
+
+  if (rawUrl && rawUrl.trim()) {
+    const trimmed = rawUrl.trim();
+    if (trimmed.startsWith('data:image/')) {
+      targetHref = trimmed;
+    } else {
+      const sep = trimmed.includes('?') ? '&' : '?';
+      targetHref = `${trimmed}${sep}v=${updatedAt || Date.now()}`;
+    }
+  }
+
+  // Update or create <link rel="icon">
+  let iconLink = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
+  if (!iconLink) {
+    iconLink = document.createElement('link');
+    iconLink.rel = 'icon';
+    iconLink.type = 'image/png';
+    document.head.appendChild(iconLink);
+  }
+  iconLink.href = targetHref;
+
+  // Update or create <link rel="apple-touch-icon">
+  let appleLink = document.querySelector("link[rel='apple-touch-icon']") as HTMLLinkElement | null;
+  if (!appleLink) {
+    appleLink = document.createElement('link');
+    appleLink.rel = 'apple-touch-icon';
+    document.head.appendChild(appleLink);
+  }
+  appleLink.href = targetHref;
+
+  // Fallback to default if custom remote url fails to load
+  if (targetHref !== defaultFavicon && !targetHref.startsWith('data:image/')) {
+    const testImg = new Image();
+    testImg.onerror = () => {
+      console.warn('Custom favicon failed to load, reverting to default /favicon.png');
+      if (iconLink) iconLink.href = defaultFavicon;
+      if (appleLink) appleLink.href = defaultFavicon;
+    };
+    testImg.src = targetHref;
+  }
 }
 
 const defaultSnapshot = dataService.getSnapshot();
@@ -47,16 +103,29 @@ const SchoolDataContext = createContext<SchoolDataContextType>({
     projectId: firebaseInfo.projectId,
     firestoreDatabaseId: firebaseInfo.firestoreDatabaseId
   },
+  faviconConfig: {
+    faviconUrl: '',
+    faviconUpdatedAt: 0
+  },
   loginWithGoogle: async () => {},
   logoutAdmin: async () => {},
   seedData: async () => ({ success: false, message: '' }),
-  refreshData: () => {}
+  refreshData: () => {},
+  saveFavicon: async () => {},
+  resetFavicon: async () => {}
 });
 
 export const SchoolDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [data, setData] = useState<SchoolStoreData>(defaultSnapshot);
   const [loading, setLoading] = useState<boolean>(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [faviconConfig, setFaviconConfig] = useState<{
+    faviconUrl: string;
+    faviconUpdatedAt: number;
+  }>({
+    faviconUrl: '',
+    faviconUpdatedAt: 0
+  });
   const [isDemoAdmin, setIsDemoAdmin] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('spensata_demo_admin') === 'true';
@@ -177,6 +246,20 @@ export const SchoolDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       })
     );
 
+    // Pengaturan Situs (Favicon, Logo, dan konfigurasi realtime)
+    unsubs.push(
+      dataService.subscribe<{ faviconUrl?: string; faviconUpdatedAt?: number }>(
+        'pengaturan',
+        (val) => {
+          const url = val?.faviconUrl || '';
+          const updatedAt = val?.faviconUpdatedAt || 0;
+          setFaviconConfig({ faviconUrl: url, faviconUpdatedAt: updatedAt });
+          applyFaviconToDocument(url, updatedAt);
+        },
+        'situs'
+      )
+    );
+
     setLoading(false);
 
     return () => {
@@ -217,6 +300,19 @@ export const SchoolDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setData(dataService.getSnapshot());
   };
 
+  const saveFavicon = async (url: string) => {
+    const timestamp = Date.now();
+    await dataService.saveFavicon(url, timestamp);
+    setFaviconConfig({ faviconUrl: url, faviconUpdatedAt: timestamp });
+    applyFaviconToDocument(url, timestamp);
+  };
+
+  const resetFavicon = async () => {
+    await dataService.resetFavicon();
+    setFaviconConfig({ faviconUrl: '', faviconUpdatedAt: Date.now() });
+    applyFaviconToDocument('', Date.now());
+  };
+
   return (
     <SchoolDataContext.Provider
       value={{
@@ -226,10 +322,13 @@ export const SchoolDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         isAdmin,
         currentUser,
         firebaseInfo,
+        faviconConfig,
         loginWithGoogle,
         logoutAdmin,
         seedData,
-        refreshData
+        refreshData,
+        saveFavicon,
+        resetFavicon
       }}
     >
       {children}
