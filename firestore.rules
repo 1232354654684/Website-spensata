@@ -1,11 +1,17 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Hanya admin yang berhak menulis (email pemilik aplikasi ardiansyahroni017@gmail.com & admin@spensata.sch.id)
+    // Fungsi pengecekan admin:
+    // Bernilai true jika email pengguna sama dengan email pemilik (ardiansyahroni017@gmail.com / admin@spensata.sch.id),
+    // ATAU terdaftar di dokumen /administrators/{email pengguna huruf kecil}.
     function isAdmin() {
       return request.auth != null && (
         request.auth.token.email.lower() == 'ardiansyahroni017@gmail.com' ||
-        request.auth.token.email.lower() == 'admin@spensata.sch.id'
+        request.auth.token.email.lower() == 'admin@spensata.sch.id' ||
+        (
+          exists(/databases/$(database)/documents/administrators/$(request.auth.token.email.lower())) &&
+          get(/databases/$(database)/documents/administrators/$(request.auth.token.email.lower())).data.email.lower() == request.auth.token.email.lower()
+        )
       );
     }
 
@@ -72,6 +78,11 @@ service cloud.firestore {
     match /pengaturan/{docId} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // Koleksi akun administrator: hanya boleh dibaca dan ditulis oleh isAdmin()
+    match /administrators/{emailId} {
+      allow read, write: if isAdmin();
     }
   }
 }

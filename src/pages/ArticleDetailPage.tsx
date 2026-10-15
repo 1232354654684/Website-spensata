@@ -6,7 +6,6 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
   ArrowRight
 } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
@@ -51,7 +50,6 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
   const author = article.penulis || (article as any).author || '';
   const category = article.kategori || (article as any).category || '';
   const coverImage = article.fotoSampul || (article as any).coverImage || '';
-  const originalUrl = article.tautanAsli || (article as any).originalUrl || '';
 
   return (
     <article className="max-w-4xl mx-auto space-y-8">
@@ -139,18 +137,6 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
                 </>
               )}
             </button>
-
-            {originalUrl && (
-              <a
-                href={originalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0E4A6B] dark:text-[#E5A823] hover:underline"
-              >
-                <span>Buka Versi Asli Sekolah</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            )}
           </div>
         </div>
       </div>

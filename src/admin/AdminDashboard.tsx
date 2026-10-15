@@ -27,7 +27,8 @@ import {
   Eye,
   FileText,
   Database,
-  Globe
+  Globe,
+  Users
 } from 'lucide-react';
 import { useSchoolData } from '../context/SchoolDataContext';
 import { dataService } from '../services/dataService';
@@ -35,6 +36,8 @@ import { isFirebaseConfigured } from '../services/firebase';
 import { AdminLogin } from './AdminLogin';
 import { AdminImageUploadField } from './AdminImageUploadField';
 import { AdminFaviconManager } from './AdminFaviconManager';
+import { AdminAccountsManager } from './AdminAccountsManager';
+import { SchoolLogo } from '../components/SchoolLogo';
 import { validateImageFile, compressImageClientSide } from '../utils/imageHelper';
 import {
   SchoolIdentity,
@@ -67,7 +70,8 @@ type AdminTab =
   | 'kelolaGaleri'
   | 'galeriFoto'
   | 'galeriVideo'
-  | 'favicon';
+  | 'favicon'
+  | 'akunAdmin';
 
 export const AdminDashboard: React.FC = () => {
   const { data, isAdmin, currentUser, logoutAdmin, seedData, firebaseInfo } = useSchoolData();
@@ -157,8 +161,8 @@ export const AdminDashboard: React.FC = () => {
         <div>
           {/* Header Branding */}
           <div className="p-5 border-b border-slate-800 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#0E4A6B] text-white flex items-center justify-center flex-shrink-0 shadow">
-              <ShieldCheck className="w-5 h-5 text-[#E5A823]" />
+            <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+              <SchoolLogo className="w-full h-full object-contain filter drop-shadow" />
             </div>
             <div>
               <h2 className="text-sm font-bold text-white tracking-tight">Admin Dashboard</h2>
@@ -366,6 +370,18 @@ export const AdminDashboard: React.FC = () => {
             >
               <Globe className="w-4 h-4 text-[#E5A823]" />
               <span>Favicon Tab Browser</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('akunAdmin')}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-medium transition-colors cursor-pointer ${
+                activeTab === 'akunAdmin'
+                  ? 'bg-[#0E4A6B] text-white'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Users className="w-4 h-4 text-emerald-400" />
+              <span>Akun Admin</span>
             </button>
           </nav>
         </div>
@@ -681,7 +697,7 @@ export const AdminDashboard: React.FC = () => {
               {/* Form Pijar Siswa */}
               <DocEditForm
                 title="Pijar Siswa"
-                description="Platform belajar mandiri peserta didik."
+                description="Platform belajar mandiri murid."
                 initialData={data.elearning.siswa}
                 fields={[
                   { key: 'nama', label: 'Nama Portal', type: 'text', required: true },
@@ -705,7 +721,7 @@ export const AdminDashboard: React.FC = () => {
           <CollectionManager<StatistikItem>
             collectionName="statistik"
             title="Statistik Sekolah (Sekolah dalam Angka)"
-            description="Angka siswa, GTK, rombel, dan ekstrakurikuler."
+            description="Angka murid, GTK, rombel, dan ekstrakurikuler."
             items={data.statistik}
             columns={[
               { key: 'label', label: 'Label' },
@@ -718,7 +734,7 @@ export const AdminDashboard: React.FC = () => {
               { key: 'nilai', label: 'Nilai Angka', type: 'number', required: true },
               { key: 'label', label: 'Label Utama', type: 'text', required: true },
               { key: 'sublabel', label: 'Sublabel / Keterangan', type: 'text' },
-              { key: 'satuan', label: 'Satuan (misal: Siswa, GTK, Rombel)', type: 'text', required: true },
+              { key: 'satuan', label: 'Satuan (misal: Murid, GTK, Rombel)', type: 'text', required: true },
               { key: 'urutan', label: 'Urutan Tampil', type: 'number' }
             ]}
             onAdd={async (item) => {
@@ -1017,6 +1033,9 @@ export const AdminDashboard: React.FC = () => {
 
         {/* TAB 14: PENGATURAN FAVICON SITUS */}
         {activeTab === 'favicon' && <AdminFaviconManager />}
+
+        {/* TAB 15: KELOLA AKUN ADMINISTRATOR */}
+        {activeTab === 'akunAdmin' && <AdminAccountsManager />}
       </main>
     </div>
   );

@@ -16,8 +16,9 @@ import {
   GaleriAlbumItem
 } from '../types';
 import { dataService } from '../services/dataService';
-import { auth, isFirebaseConfigured, firebaseInfo, loginWithGoogle } from '../services/firebase';
+import { auth, db, isFirebaseConfigured, firebaseInfo, loginWithGoogle } from '../services/firebase';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 interface SchoolDataContextType {
   data: SchoolStoreData;
@@ -47,7 +48,7 @@ interface SchoolDataContextType {
 export function applyFaviconToDocument(rawUrl?: string, updatedAt?: number) {
   if (typeof document === 'undefined') return;
 
-  const defaultFavicon = '/favicon.png?v=2';
+  const defaultFavicon = '/favicon.png?v=3';
   let targetHref = defaultFavicon;
 
   if (rawUrl && rawUrl.trim()) {
@@ -267,18 +268,66 @@ export const SchoolDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
   }, []);
 
-  const PRIMARY_ADMIN_EMAILS = [
-    'ardiansyahroni017@gmail.com',
-    'admin@spensata.sch.id'
-  ];
+  const PRIMARY_ADMIN_EMAILS = useMemo(
+    () => ['ardiansyahroni017@gmail.com', 'admin@spensata.sch.id'],
+    []
+  );
 
-  const isAdmin = useMemo(() => {
-    if (currentUser && currentUser.email) {
-      const email = currentUser.email.toLowerCase().trim();
-      return PRIMARY_ADMIN_EMAILS.includes(email);
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('spensata_demo_admin') === 'true';
     }
-    return isDemoAdmin;
-  }, [currentUser, isDemoAdmin]);
+    return false;
+  });
+
+  useEffect(() => {
+    if (isDemoAdmin) {
+      setIsAdmin(true);
+      return;
+    }
+    if (!currentUser || !currentUser.email) {
+      setIsAdmin(false);
+      return;
+    }
+
+    const email = currentUser.email.toLowerCase().trim();
+    if (PRIMARY_ADMIN_EMAILS.includes(email)) {
+      setIsAdmin(true);
+      return;
+    }
+
+    // Cek apakah akun terdaftar di dokumen /administrators/{email}
+    if (isFirebaseConfigured() && db) {
+      let active = true;
+      getDoc(doc(db, 'administrators', email))
+        .then((snapshot) => {
+          if (!active) return;
+          if (snapshot.exists()) {
+            setIsAdmin(true);
+          } else {
+            console.warn(`Akun ${email} tidak memiliki izin administrator. Mengeluarkan sesi...`);
+            setIsAdmin(false);
+            if (auth) {
+              signOut(auth).catch(() => {});
+            }
+          }
+        })
+        .catch((err) => {
+          if (!active) return;
+          console.error('Gagal memverifikasi akun admin:', err);
+          setIsAdmin(false);
+          if (auth) {
+            signOut(auth).catch(() => {});
+          }
+        });
+
+      return () => {
+        active = false;
+      };
+    } else {
+      setIsAdmin(false);
+    }
+  }, [currentUser, isDemoAdmin, PRIMARY_ADMIN_EMAILS]);
 
   const logoutAdmin = async () => {
     if (isFirebaseConfigured() && auth) {

@@ -22,7 +22,7 @@ export const VisiMisiPage: React.FC = () => {
             Visi dan Misi Sekolah
           </h1>
           <p className="text-base sm:text-lg text-slate-200 leading-relaxed">
-            Komitmen bersama seluruh civitas akademika {identitas.nama || 'SMP Negeri 1 Tambak'} dalam mengantarkan peserta didik menuju keunggulan masa depan.
+            Komitmen bersama seluruh civitas akademika {identitas.nama || 'SMP Negeri 1 Tambak'} dalam mengantarkan murid menuju keunggulan masa depan.
           </p>
         </div>
       </div>

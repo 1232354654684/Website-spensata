@@ -485,6 +485,10 @@ export const AdminFaviconManager: React.FC = () => {
               Pilih file logo sekolah. Sistem otomatis meresize menjadi <strong>128x128 px</strong>, mempertahankan transparansi (PNG transparan murni tanpa background), dan memastikan ukuran di bawah <strong>100 KB</strong> untuk disimpan aman di Firestore.
             </p>
 
+            <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-[11px] text-sky-200 leading-relaxed">
+              <strong>Catatan:</strong> Gambar ini juga dipakai sebagai logo di header, footer, login admin, dan dashboard admin. Gunakan PNG transparan berbentuk persegi, minimal 512x512 px.
+            </div>
+
             <div>
               <button
                 type="button"

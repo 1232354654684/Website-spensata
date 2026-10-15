@@ -137,6 +137,13 @@ export interface GaleriAlbumItem {
   dibuatPada?: number | string | any;
 }
 
+export interface Administrator {
+  email: string;
+  nama: string;
+  dibuatOleh: string;
+  dibuatPada: string;
+}
+
 // Aliases for legacy component compatibility where needed
 export type Article = BeritaItem;
 export type GalleryItem = GaleriFotoItem;

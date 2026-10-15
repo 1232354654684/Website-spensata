@@ -6,12 +6,12 @@ import {
   Instagram,
   Youtube,
   Facebook,
-  BookOpen,
   ArrowRight,
   ExternalLink,
   ShieldCheck
 } from 'lucide-react';
 import { useSchoolData } from '../context/SchoolDataContext';
+import { SchoolLogo } from './SchoolLogo';
 
 interface FooterProps {
   onNavigate: (pageId: string) => void;
@@ -28,8 +28,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           {/* Kolom 1: Identitas Sekolah (5 Cols) */}
           <div className="lg:col-span-5 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-white/10 text-white flex items-center justify-center flex-shrink-0">
-                <BookOpen className="w-6 h-6 text-[#E5A823]" />
+              <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
+                <SchoolLogo className="w-full h-full object-contain filter drop-shadow-sm" />
               </div>
               <div>
                 <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight">

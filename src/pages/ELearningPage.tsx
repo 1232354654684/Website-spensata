@@ -126,7 +126,7 @@ export const ELearningPage: React.FC = () => {
             {Array.isArray(elearning.siswa.fitur) && elearning.siswa.fitur.length > 0 && (
               <div className="mt-6 space-y-2.5">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                  Fitur Utama Siswa:
+                  Fitur Utama Murid:
                 </span>
                 {elearning.siswa.fitur.map((f, i) => (
                   <div key={i} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
@@ -145,7 +145,7 @@ export const ELearningPage: React.FC = () => {
               rel="noopener noreferrer"
               className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-[#E5A823] hover:bg-[#d89c1a] text-slate-950 font-bold text-sm shadow-lg shadow-[#E5A823]/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
-              <span>Masuk sebagai Siswa</span>
+              <span>Masuk sebagai Murid</span>
               <ExternalLink className="w-4 h-4" />
             </a>
             <p className="text-[11px] text-center text-slate-400 mt-2">

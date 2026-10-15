@@ -6,10 +6,10 @@ import {
   Search,
   Moon,
   Sun,
-  ExternalLink,
-  BookOpen
+  ExternalLink
 } from 'lucide-react';
 import { useSchoolData } from '../context/SchoolDataContext';
+import { SchoolLogo } from './SchoolLogo';
 
 interface NavbarProps {
   currentPage: string;
@@ -68,12 +68,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               {/* Emblem Logo */}
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center p-0.5 group-hover:scale-105 transition-transform flex-shrink-0">
-                <img
-                  src="/logo-sekolah.png?v=2"
-                  alt="Logo SMP Negeri 1 Tambak"
-                  className="w-full h-full object-contain filter drop-shadow-sm"
-                  referrerPolicy="no-referrer"
-                />
+                <SchoolLogo className="w-full h-full object-contain filter drop-shadow-sm" />
               </div>
 
               <div>

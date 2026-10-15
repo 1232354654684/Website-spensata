@@ -176,6 +176,18 @@
         "urutan": { "type": "number" }
       },
       "required": ["judul", "tautanYouTube"]
+    },
+    "administrator": {
+      "title": "Akun Administrator",
+      "description": "Akun admin pengelola sistem",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "nama": { "type": "string" },
+        "dibuatOleh": { "type": "string" },
+        "dibuatPada": { "type": "string" }
+      },
+      "required": ["email", "nama", "dibuatOleh", "dibuatPada"]
     }
   },
   "firestore": {
@@ -230,6 +242,10 @@
     "/pengaturan/{id}": {
       "schema": "pengaturan",
       "description": "Dokumen pengaturan situs (favicon, logo, dll)"
+    },
+    "/administrators/{id}": {
+      "schema": "administrator",
+      "description": "Koleksi akun administrator pengelola website"
     }
   }
 }

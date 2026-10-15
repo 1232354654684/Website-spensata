@@ -79,7 +79,7 @@ export const ContactPage: React.FC = () => {
             Hubungi {identitas.nama || 'SMP Negeri 1 Tambak'}
           </h1>
           <p className="text-base sm:text-lg text-slate-200 leading-relaxed">
-            Pintu komunikasi terbuka bagi orang tua wali, siswa, alumni, dan masyarakat. Kami siap memberikan informasi yang Anda butuhkan.
+            Pintu komunikasi terbuka bagi orang tua wali, murid, alumni, dan masyarakat. Kami siap memberikan informasi yang Anda butuhkan.
           </p>
         </div>
       </div>
@@ -284,7 +284,7 @@ export const ContactPage: React.FC = () => {
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-sm bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0E4A6B] dark:focus:ring-[#E5A823]"
                 >
                   <option value="">Pilih Kategori...</option>
-                  <option value="Informasi SPMB">Informasi Penerimaan Siswa Baru (SPMB)</option>
+                  <option value="Informasi SPMB">Informasi Penerimaan Murid Baru (SPMB)</option>
                   <option value="Administrasi & Nilai">Layanan Administrasi / Legalisir Ijazah</option>
                   <option value="Akademik & E-Learning">Bantuan Akun E-Learning Pijar</option>
                   <option value="Komite & Paguyuban">Paguyuban Wali Murid</option>

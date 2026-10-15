@@ -96,9 +96,8 @@ export const FaviconManager: React.FC = () => {
 export function applyFavicon(rawUrl?: string, updatedAt?: number) {
   if (typeof document === 'undefined') return;
 
-  const defaultIco = '/favicon.ico';
-  const defaultPng = '/favicon.png?v=2';
-  let targetHref = defaultIco;
+  const defaultPng = '/favicon.png?v=3';
+  let targetHref = defaultPng;
 
   if (rawUrl && rawUrl.trim()) {
     const trimmed = rawUrl.trim();
@@ -133,16 +132,16 @@ export function applyFavicon(rawUrl?: string, updatedAt?: number) {
     appleLink.rel = 'apple-touch-icon';
     document.head.appendChild(appleLink);
   }
-  appleLink.href = targetHref === defaultIco ? defaultPng : targetHref;
+  appleLink.href = targetHref;
 
-  // 3. Fallback check for remote URLs: If URL fails to load, revert to /favicon.ico
-  if (targetHref !== defaultIco && !targetHref.startsWith('data:image/')) {
+  // 3. Fallback check for remote URLs: If URL fails to load, revert to /favicon.png?v=3
+  if (targetHref !== defaultPng && !targetHref.startsWith('data:image/')) {
     const testImg = new Image();
     testImg.onerror = () => {
-      console.warn('Favicon URL failed to load in browser, reverting to /favicon.ico:', targetHref);
+      console.warn('Favicon URL failed to load in browser, reverting to /favicon.png?v=3:', targetHref);
       if (iconLink) {
-        iconLink.href = defaultIco;
-        iconLink.type = 'image/x-icon';
+        iconLink.href = defaultPng;
+        iconLink.type = 'image/png';
       }
       if (appleLink) {
         appleLink.href = defaultPng;

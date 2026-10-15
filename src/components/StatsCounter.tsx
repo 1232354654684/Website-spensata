@@ -140,7 +140,7 @@ export const StatsCounter: React.FC = () => {
             </span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Kekuatan Komunitas {data.identitas.singkatan || 'SPENSATA'}
+            Data Sekolah Terkini
           </h2>
         </div>
       </div>

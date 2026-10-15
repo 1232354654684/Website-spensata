@@ -25,7 +25,7 @@
     "sambutanLengkap": [
       "Puji syukur kehadirat Allah SWT atas rahmat dan karunia-Nya, website resmi SMP Negeri 1 Tambak kini hadir dalam wajah baru yang lebih modern, cepat, dan transparan bagi seluruh civitas akademika serta masyarakat umum.",
       "Sebagai salah satu Sekolah Penggerak di Kabupaten Banyumas, SMP Negeri 1 Tambak terus berinovasi mengintegrasikan teknologi informasi ke dalam seluruh proses belajar mengajar, administrasi, dan layanan kesiswaan melalui platform terpadu seperti Pijar Sekolah dan aplikasi SPECTRA.",
-      "Sesuai dengan semboyan kami, \"Berkarakter Kuat Berprestasi Hebat\", kami tidak hanya membekali peserta didik dengan kecakapan akademik, namun juga menanamkan nilai-nilai Profil Pelajar Pancasila, budi pekerti luhur, kemandirian, dan semangat gotong royong.",
+      "Sesuai dengan semboyan kami, \"Berkarakter Kuat Berprestasi Hebat\", kami tidak hanya membekali murid dengan kecakapan akademik, namun juga menanamkan nilai-nilai Profil Pelajar Pancasila, budi pekerti luhur, kemandirian, dan semangat gotong royong.",
       "Kami mengundang seluruh orang tua wali, alumni, dan pemangku kepentingan untuk bersinergi bersama memajukan pendidikan generasi penerus bangsa."
     ]
   },
@@ -39,9 +39,9 @@
     {
       "id": "students",
       "nilai": 856,
-      "label": "Peserta Didik Aktif",
+      "label": "Murid Aktif",
       "sublabel": "Kelas VII, VIII, dan IX",
-      "satuan": "Siswa"
+      "satuan": "Murid"
     },
     {
       "id": "staff",
@@ -69,23 +69,23 @@
     "visi": "Terwujudnya Lulusan yang Beriman dan Bertakwa, Berkarakter Kuat, Berprestasi Hebat, Berwawasan Lingkungan, serta Terdepan dalam Pemanfaatan Teknologi Digital.",
     "indikatorVisi": [
       "Terwujudnya penghayatan dan pengamalan nilai-nilai keagamaan dalam kehidupan sehari-hari.",
-      "Terbentuknya kepribadian siswa yang berintegritas, mandiri, kritis, dan bergotong royong.",
+      "Terbentuknya kepribadian murid yang berintegritas, mandiri, kritis, dan bergotong royong.",
       "Tercapainya prestasi akademik dan non-akademik di tingkat kabupaten, provinsi, dan nasional.",
       "Terwujudnya lingkungan sekolah yang asri, bersih, sehat, dan ramah anak.",
       "Terlaksananya pembelajaran aktif berbasis digital dan literasi teknologi terpadu."
     ],
     "misi": [
-      "Menyelenggarakan kegiatan keagamaan dan pembiasaan ibadah untuk mempertebal keimanan dan ketakwaan peserta didik.",
+      "Menyelenggarakan kegiatan keagamaan dan pembiasaan ibadah untuk mempertebal keimanan dan ketakwaan murid.",
       "Menerapkan Kurikulum Merdeka dengan pembelajaran berdiferensiasi dan berpusat pada murid.",
-      "Mengembangkan potensi, minat, dan bakat siswa secara optimal melalui bimbingan intensif dan ragam ekstrakurikuler.",
+      "Mengembangkan potensi, minat, dan bakat murid secara optimal melalui bimbingan intensif dan ragam ekstrakurikuler.",
       "Memperkuat budaya literasi, numerasi, dan kecakapan digital di seluruh lingkungan satuan pendidikan.",
       "Meningkatkan kompetensi profesional guru dan tenaga kependidikan dalam integrasi teknologi pendidikan masa kini.",
       "Mewujudkan tata kelola sekolah yang transparan, akuntabel, dan mengutamakan pelayanan prima kepada masyarakat.",
       "Membangun jejaring kolaborasi harmonis dengan komite sekolah, paguyuban orang tua, alumni, dan institusi mitra."
     ],
     "tujuan": [
-      "Meningkatkan rerata capaian asesmen kompetensi minimum (AKM) siswa di bidang literasi dan numerasi.",
-      "Meluluskan 100% peserta didik dengan predikat karakter baik dan terserap di jenjang pendidikan menengah favorit.",
+      "Meningkatkan rerata capaian asesmen kompetensi minimum (AKM) murid di bidang literasi dan numerasi.",
+      "Meluluskan 100% murid dengan predikat karakter baik dan terserap di jenjang pendidikan menengah favorit.",
       "Meraih kejuaraan di ajang FTBI (Festival Tunas Bahasa Ibu), O2SN, FLS2N, dan Lomba Tingkat Pramuka.",
       "Mengimplementasikan 100% tata kelola administrasi dan penilaian berbasis digital terintegrasi."
     ]
@@ -96,7 +96,7 @@
     "luasTanah": "12.450 m²",
     "uraian": [
       "SMP Negeri 1 Tambak didirikan sebagai wujud komitmen pemerintah dalam memperluas akses pendidikan berkualitas bagi masyarakat di wilayah Banyumas bagian timur, khususnya Kecamatan Tambak dan sekitarnya.",
-      "Sejak berdiri, sekolah ini terus mengalami perkembangan pesat dari segi sarana fisik, kualitas tenaga pendidik, maupun prestasi siswa di berbagai bidang. Berlokasi strategis di Jl. Watuagung Desa Kamulyan, kampus sekolah memiliki lingkungan belajar yang nyaman, asri, dan representatif.",
+      "Sejak berdiri, sekolah ini terus mengalami perkembangan pesat dari segi sarana fisik, kualitas tenaga pendidik, maupun prestasi murid di berbagai bidang. Berlokasi strategis di Jl. Watuagung Desa Kamulyan, kampus sekolah memiliki lingkungan belajar yang nyaman, asri, dan representatif.",
       "Pada era modern, SMP Negeri 1 Tambak terpilih menjadi salah satu Satuan Pendidikan Pelaksana Program Sekolah Penggerak. Sekolah memelopori integrasi digital dalam pembelajaran dan administrasi sekolah melalui sistem e-learning Pijar Sekolah serta pemanfaatan aplikasi SPECTRA, menjadikannya salah satu sekolah rujukan di Kabupaten Banyumas."
     ]
   },
@@ -107,27 +107,27 @@
     { "nama": "Lapangan Olahraga Multifungsi", "keterangan": "Basket, Voli, Futsal, dan Atletik" },
     { "nama": "Mushola Nurul Ilmi", "keterangan": "Kapasitas 400 Jamaah untuk Sholat Berjamaah" },
     { "nama": "Ruang Keterampilan & Seni Budaya", "keterangan": "Peralatan Karawitan & Sanggar Musik" },
-    { "nama": "UKS dan Ruang Konseling BK", "keterangan": "Pelayanan Kesehatan Siswa Terpadu" },
+    { "nama": "UKS dan Ruang Konseling BK", "keterangan": "Pelayanan Kesehatan Murid Terpadu" },
     { "nama": "Kantin Sehat & Ramah Lingkungan", "keterangan": "Sertifikasi Higienitas Dinkes" }
   ],
   "elearning": {
     "guru": {
       "nama": "Pijar Guru (SIM Sekolah)",
       "tautan": "https://sim.pijarsekolah.id/login",
-      "deskripsi": "Portal bagi bapak/ibu pendidik untuk pengelolaan modul ajar digital, input nilai rapor kurikulum merdeka, presensi harian, dan monitoring tugas siswa.",
+      "deskripsi": "Portal bagi bapak/ibu pendidik untuk pengelolaan modul ajar digital, input nilai rapor kurikulum merdeka, presensi harian, dan monitoring tugas murid.",
       "label": "Akses Pendidik & Tenaga Kependidikan",
       "fitur": [
         "Manajemen RPP / Modul Ajar Digital",
         "Bank Soal dan Pembuatan Asesmen Online",
         "Input Capaian Pembelajaran & Nilai Rapor",
-        "Presensi Kehadiran Siswa Real-time"
+        "Presensi Kehadiran Murid Real-time"
       ]
     },
     "siswa": {
       "nama": "Pijar Siswa",
       "tautan": "https://siswa.pijarsekolah.id/login",
-      "deskripsi": "Platform belajar daring bagi peserta didik SPENSATA untuk mengakses materi interaktif, mengerjakan penugasan, mengikuti kuis, dan melihat evaluasi belajar.",
-      "label": "Akses Peserta Didik",
+      "deskripsi": "Platform belajar daring bagi murid SPENSATA untuk mengakses materi interaktif, mengerjakan penugasan, mengikuti kuis, dan melihat evaluasi belajar.",
+      "label": "Akses Murid",
       "fitur": [
         "Akses Materi & Modul Pelajaran Kapan Saja",
         "Pengerjaan Tugas & Ulangan Harian Daring",
@@ -163,7 +163,7 @@
     },
     {
       "id": "slide-3",
-      "judul": "Pengembangan Bakat & Minat Siswa",
+      "judul": "Pengembangan Bakat & Minat Murid",
       "subjudul": "Didukung oleh 14 kegiatan ekstrakurikuler unggulan, mulai dari Pramuka Berprestasi, Olahraga, Kesenian Tradisional, hingga Riset Remaja.",
       "badge": "Prestasi & Ekstrakurikuler",
       "gambar": "https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=1600&auto=format&fit=crop",
@@ -201,7 +201,7 @@
       "ringkasan": "Dalam rangka meningkatkan kualitas tata kelola dan manajemen sekolah berbasis teknologi digital, SMP Negeri 1 Tambak melaksanakan kegiatan Workshop Optimalisasi Manajemen Sekolah Terintegrasi melalui pemanfaatan aplikasi SPECTRA.",
       "isi": [
         "Dalam rangka meningkatkan kualitas tata kelola dan manajemen sekolah berbasis teknologi digital, SMP Negeri 1 Tambak menyelenggarakan Workshop Optimalisasi Manajemen Sekolah Terintegrasi yang berfokus pada pemanfaatan aplikasi SPECTRA.",
-        "Kegiatan workshop dibuka secara langsung oleh Kepala Sekolah, Bapak Sad Diana Puji Hartono, S.Pd., M.Si., dan diikuti oleh seluruh jajaran dewan guru serta staf tata usaha. Aplikasi SPECTRA dirancang untuk mempermudah monitoring perkembangan belajar siswa, manajemen presensi daring, pencatatan capaian akademik, dan integrasi modul asesmen Kurikulum Merdeka.",
+        "Kegiatan workshop dibuka secara langsung oleh Kepala Sekolah, Bapak Sad Diana Puji Hartono, S.Pd., M.Si., dan diikuti oleh seluruh jajaran dewan guru serta staf tata usaha. Aplikasi SPECTRA dirancang untuk mempermudah monitoring perkembangan belajar murid, manajemen presensi daring, pencatatan capaian akademik, dan integrasi modul asesmen Kurikulum Merdeka.",
         "Melalui pelatihan intensif ini, diharapkan seluruh tenaga pendidik semakin cakap dalam mengoperasikan platform digital sehingga administrasi kelas menjadi semakin efisien dan waktu guru lebih banyak terfokus pada pendampingan murid."
       ],
       "tanggal": "22/07/2026 09:46",
@@ -234,13 +234,13 @@
     },
     {
       "id": "post-56",
-      "judul": "Pengumuman dan Pelepasan Siswa Kelas IX SMP Negeri 1 Tambak Tahun Pelajaran 2025/2026",
+      "judul": "Pengumuman dan Pelepasan Murid Kelas IX SMP Negeri 1 Tambak Tahun Pelajaran 2025/2026",
       "slug": "pengumuman-dan-pelepasan-siswa-kelas-ix-smp-negeri-1-tambak-tahun-pelajaran-20252026",
-      "ringkasan": "SMP Negeri 1 Tambak melaksanakan kegiatan Pengumuman dan Pelepasan Siswa Kelas IX Tahun Pelajaran 2025/2026. Kegiatan berlangsung dengan penuh haru dan kebanggaan atas kelulusan seluruh siswa.",
+      "ringkasan": "SMP Negeri 1 Tambak melaksanakan kegiatan Pengumuman dan Pelepasan Murid Kelas IX Tahun Pelajaran 2025/2026. Kegiatan berlangsung dengan penuh haru dan kebanggaan atas kelulusan seluruh murid.",
       "isi": [
-        "SMP Negeri 1 Tambak menggelar agenda Pelepasan Siswa Kelas IX Tahun Pelajaran 2025/2026 yang dihadiri oleh jajaran komite sekolah, dewan guru, orang tua murid, dan tokoh masyarakat setempat.",
-        "Suasana khidmat dan penuh haru menyelimuti saat pengumuman kelulusan 100% dibacakan. Kepala sekolah menyampaikan apresiasi setinggi-tingginya kepada para siswa yang telah berjuang dan menorehkan prestasi membanggakan selama tiga tahun menuntut ilmu di SPENSATA.",
-        "Acara dimeriahkan dengan penampilan seni tari tradisional, paduan suara siswa, serta pengalungan medali kelulusan bagi para wisudawan."
+        "SMP Negeri 1 Tambak menggelar agenda Pelepasan Murid Kelas IX Tahun Pelajaran 2025/2026 yang dihadiri oleh jajaran komite sekolah, dewan guru, orang tua murid, dan tokoh masyarakat setempat.",
+        "Suasana khidmat dan penuh haru menyelimuti saat pengumuman kelulusan 100% dibacakan. Kepala sekolah menyampaikan apresiasi setinggi-tingginya kepada para murid yang telah berjuang dan menorehkan prestasi membanggakan selama tiga tahun menuntut ilmu di SPENSATA.",
+        "Acara dimeriahkan dengan penampilan seni tari tradisional, paduan suara murid, serta pengalungan medali kelulusan bagi para wisudawan."
       ],
       "tanggal": "22/07/2026 09:12",
       "penulis": "Vira Trianna Putri, S.Kom",
@@ -274,7 +274,7 @@
       "id": "post-31",
       "judul": "Paguyuban Bersemarak Kemerdekaan dari SMP Negeri 1 Tambak",
       "slug": "paguyuban-bersemarak-kemerdekaan-dari-smp-negeri-1-tambak",
-      "ringkasan": "Semarak perayaan HUT Kemerdekaan Republik Indonesia di SMP Negeri 1 Tambak berlangsung meriah dengan partisipasi aktif paguyuban orang tua, siswa, dan dewan guru dalam berbagai lomba kebersamaan.",
+      "ringkasan": "Semarak perayaan HUT Kemerdekaan Republik Indonesia di SMP Negeri 1 Tambak berlangsung meriah dengan partisipasi aktif paguyuban orang tua, murid, dan dewan guru dalam berbagai lomba kebersamaan.",
       "isi": [
         "Menyambut peringatan Hari Ulang Tahun Kemerdekaan Republik Indonesia, SMP Negeri 1 Tambak menggelar festival semarak kemerdekaan yang digerakkan bersama oleh Paguyuban Wali Murid dan Pengurus OSIS.",
         "Berbagai perlombaan edukatif dan tradisional digelar, mulai dari pawai kostum nusantara, lomba kreasi tumpeng kemerdekaan, tarik tambang persaudaraan, hingga pertandingan olahraga gembira antar kelas.",
@@ -302,14 +302,14 @@
     {
       "id": "gal-2",
       "judul": "Seleksi Penerimaan Murid Baru 2026",
-      "deskripsi": "Rangkaian verifikasi berkas, pelayanan ramah panitia, dan orientasi calon peserta didik baru tahun ajaran 2026/2027.",
+      "deskripsi": "Rangkaian verifikasi berkas, pelayanan ramah panitia, dan orientasi calon murid baru tahun ajaran 2026/2027.",
       "tanggal": "Juli 2026",
       "kategori": "Kesiswaan",
       "foto": "https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=1200&auto=format&fit=crop"
     },
     {
       "id": "gal-3",
-      "judul": "Pelepasan Siswa Kelas IX",
+      "judul": "Pelepasan Murid Kelas IX",
       "deskripsi": "Prosesi wisuda dan pelepasan kelulusan angkatan kelas IX dengan pengalungan samir dan pementasan seni tradisi.",
       "tanggal": "Juni 2026",
       "kategori": "Wisuda",
@@ -318,7 +318,7 @@
     {
       "id": "gal-4",
       "judul": "Rapat Paguyuban Wali Murid dan Sosialisasi BNN",
-      "deskripsi": "Pertemuan sinergis orang tua siswa dan penyuluhan edukasi pencegahan narkoba bersama narasumber BNN Kabupaten Banyumas.",
+      "deskripsi": "Pertemuan sinergis orang tua murid dan penyuluhan edukasi pencegahan narkoba bersama narasumber BNN Kabupaten Banyumas.",
       "tanggal": "Juli 2026",
       "kategori": "Paguyuban",
       "foto": "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?q=80&w=1200&auto=format&fit=crop"
@@ -344,15 +344,15 @@
     {
       "id": "vid-1",
       "judul": "Profil dan Semarak Aktivitas SMP Negeri 1 Tambak",
-      "deskripsi": "Dokumentasi visual lingkungan sekolah, fasilitas laboratorium digital, dan dinamika pembelajaran aktif peserta didik.",
+      "deskripsi": "Dokumentasi visual lingkungan sekolah, fasilitas laboratorium digital, dan dinamika pembelajaran aktif murid.",
       "tanggal": "2026",
       "durasi": "04:15",
       "tautanYouTube": "https://www.youtube.com/watch?v=TosdustSLFg"
     },
     {
       "id": "vid-2",
-      "judul": "Gelar Karya P5 & Pentas Kreasi Siswa SPENSATA",
-      "deskripsi": "Pameran proyek penguatan profil pelajar pancasila serta penampilan bakat seni dan budaya siswa SMP Negeri 1 Tambak.",
+      "judul": "Gelar Karya P5 & Pentas Kreasi Murid SPENSATA",
+      "deskripsi": "Pameran proyek penguatan profil pelajar pancasila serta penampilan bakat seni dan budaya murid SMP Negeri 1 Tambak.",
       "tanggal": "2026",
       "durasi": "05:40",
       "tautanYouTube": "https://www.youtube.com/watch?v=eD3bW3zsxjY"
@@ -371,7 +371,7 @@
       "id": "alb-1",
       "judul": "Seleksi Penerimaan Murid Baru (SPMB) 2026",
       "tanggal": "2026-07-12",
-      "deskripsi": "Dokumentasi rangkaian verifikasi berkas, pelayanan panitia, dan orientasi peserta didik baru angkatan 2026/2027.",
+      "deskripsi": "Dokumentasi rangkaian verifikasi berkas, pelayanan panitia, dan orientasi murid baru angkatan 2026/2027.",
       "linkAlbum": "https://photos.app.goo.gl/spensata-spmb-2026",
       "linkSampul": "https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=1200&auto=format&fit=crop",
       "daftarFoto": [
@@ -383,9 +383,9 @@
     },
     {
       "id": "alb-2",
-      "judul": "Pelepasan Siswa Kelas IX Angkatan 2026",
+      "judul": "Pelepasan Murid Kelas IX Angkatan 2026",
       "tanggal": "2026-06-20",
-      "deskripsi": "Prosesi wisuda dan pengalungan samir kelulusan siswa kelas IX SMP Negeri 1 Tambak serta pertunjukan tari kreasi nusantara.",
+      "deskripsi": "Prosesi wisuda dan pengalungan samir kelulusan murid kelas IX SMP Negeri 1 Tambak serta pertunjukan tari kreasi nusantara.",
       "linkAlbum": "https://photos.app.goo.gl/spensata-wisuda-2026",
       "linkSampul": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1200&auto=format&fit=crop",
       "daftarFoto": [
@@ -399,7 +399,7 @@
       "id": "alb-3",
       "judul": "Gelar Karya P5 & Pentas Seni Pelajar Pancasila",
       "tanggal": "2026-05-18",
-      "deskripsi": "Pameran hasil kreasi daur ulang, rekayasa teknologi ramah lingkungan, dan festival kuliner tradisional karya peserta didik.",
+      "deskripsi": "Pameran hasil kreasi daur ulang, rekayasa teknologi ramah lingkungan, dan festival kuliner tradisional karya murid.",
       "linkAlbum": "https://photos.app.goo.gl/spensata-gelarkarya-p5",
       "linkSampul": "https://images.unsplash.com/photo-1511632765486-a01980e01a18?q=80&w=1200&auto=format&fit=crop",
       "daftarFoto": [
