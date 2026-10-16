@@ -1,5 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Users, GraduationCap, School, Trophy, Sparkles } from 'lucide-react';
+import {
+  Users,
+  GraduationCap,
+  School,
+  Trophy,
+  Sparkles,
+  Award,
+  FlaskConical,
+  BookOpen
+} from 'lucide-react';
 import { useSchoolData } from '../context/SchoolDataContext';
 
 interface StatCardProps {
@@ -10,18 +19,26 @@ interface StatCardProps {
   unit: string;
 }
 
-// Komponen kartu statistik tunggal yang dipakai ulang untuk keempat kartu
+// Komponen kartu statistik tunggal yang dipakai ulang untuk kartu statistik
 const StatCard: React.FC<StatCardProps> = ({ id, value, label, sublabel, unit }) => {
   const getIcon = () => {
     switch (id) {
       case 'students':
         return <Users className="w-6 h-6 text-[#0E4A6B] dark:text-[#5FB0DB]" />;
       case 'staff':
+      case 'teachers':
+      case 'alumni':
         return <GraduationCap className="w-6 h-6 text-[#0E4A6B] dark:text-[#5FB0DB]" />;
       case 'classes':
         return <School className="w-6 h-6 text-[#0E4A6B] dark:text-[#5FB0DB]" />;
       case 'extracurricular':
         return <Trophy className="w-6 h-6 text-[#0E4A6B] dark:text-[#5FB0DB]" />;
+      case 'achievements':
+        return <Award className="w-6 h-6 text-[#0E4A6B] dark:text-[#5FB0DB]" />;
+      case 'labs':
+        return <FlaskConical className="w-6 h-6 text-[#0E4A6B] dark:text-[#5FB0DB]" />;
+      case 'library':
+        return <BookOpen className="w-6 h-6 text-[#0E4A6B] dark:text-[#5FB0DB]" />;
       default:
         return <Sparkles className="w-6 h-6 text-[#0E4A6B] dark:text-[#5FB0DB]" />;
     }

@@ -26,7 +26,6 @@ import {
   RefreshCw,
   Eye,
   FileText,
-  Database,
   Globe,
   Users
 } from 'lucide-react';
@@ -37,6 +36,7 @@ import { AdminLogin } from './AdminLogin';
 import { AdminImageUploadField } from './AdminImageUploadField';
 import { AdminFaviconManager } from './AdminFaviconManager';
 import { AdminAccountsManager } from './AdminAccountsManager';
+import { AdminStatistikManager } from './AdminStatistikManager';
 import { SchoolLogo } from '../components/SchoolLogo';
 import { validateImageFile, compressImageClientSide } from '../utils/imageHelper';
 import {
@@ -74,17 +74,20 @@ type AdminTab =
   | 'akunAdmin';
 
 export const AdminDashboard: React.FC = () => {
-  const { data, isAdmin, currentUser, logoutAdmin, seedData, firebaseInfo } = useSchoolData();
+  const { data, isAdmin, currentUser, logoutAdmin, seedData } = useSchoolData();
   const [activeTab, setActiveTab] = useState<AdminTab>('ringkasan');
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Auto-sync initial berita items (like post-58) to Firestore if not yet present
+  // Auto-sync initial items (berita, statistik) to Firestore if not yet present
   useEffect(() => {
     if (isAdmin && isFirebaseConfigured()) {
       dataService.syncInitialBerita(false).catch((err) => {
         console.warn('Initial berita background sync check:', err);
+      });
+      dataService.syncInitialStatistik(false).catch((err) => {
+        console.warn('Initial statistik background sync check:', err);
       });
     }
   }, [isAdmin]);
@@ -414,55 +417,6 @@ export const AdminDashboard: React.FC = () => {
 
       {/* Main Panel Content */}
       <main className="flex-1 p-6 md:p-8 lg:p-10 overflow-y-auto">
-        {/* Banner Koneksi Firebase & Akun Login (User Request 5) */}
-        <div className="mb-6 p-4.5 rounded-2xl bg-slate-950/90 border border-slate-800 shadow-xl">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="flex items-start sm:items-center gap-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-[#E5A823]/15 border border-[#E5A823]/30 flex items-center justify-center text-[#E5A823] flex-shrink-0 shadow-inner">
-                <Database className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">
-                    Database Firebase Firestore
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" />
-                    <span>Terhubung & Aktif</span>
-                  </span>
-                </div>
-                <div className="text-xs text-slate-300 flex flex-wrap items-center gap-x-5 gap-y-1 pt-0.5">
-                  <span className="flex items-center gap-1.5">
-                    <span className="text-slate-400">Project ID:</span>
-                    <code className="text-[#E5A823] font-mono font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                      {firebaseInfo.projectId}
-                    </code>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="text-slate-400">Database ID:</span>
-                    <code className="text-sky-400 font-mono font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                      {firebaseInfo.firestoreDatabaseId}
-                    </code>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Email yang sedang login */}
-            <div className="flex items-center gap-3 bg-slate-900/90 px-4 py-2.5 rounded-xl border border-slate-800/80 self-start lg:self-auto">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
-              <div className="text-xs">
-                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                  Email Admin Login:
-                </div>
-                <div className="font-mono font-bold text-white truncate max-w-xs sm:max-w-md">
-                  {currentUser?.email || (isAdmin ? 'ardiansyahroni017@gmail.com' : 'Belum Login')}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Toast Alerts */}
         {saveStatus && (
           <div className="mb-6 p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm flex items-center gap-2.5 shadow-lg animate-in fade-in">
@@ -484,7 +438,7 @@ export const AdminDashboard: React.FC = () => {
               <div>
                 <h1 className="text-2xl font-bold text-white tracking-tight">Ringkasan Sistem</h1>
                 <p className="text-xs text-slate-400 mt-1">
-                  Pusat kendali konten sekolah SMP Negeri 1 Tambak terintegrasi Firebase.
+                  Pusat kendali konten sekolah SMP Negeri 1 Tambak.
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -718,52 +672,10 @@ export const AdminDashboard: React.FC = () => {
 
         {/* TAB 8: STATISTIK (KOLEKSI) */}
         {activeTab === 'statistik' && (
-          <CollectionManager<StatistikItem>
-            collectionName="statistik"
-            title="Statistik Sekolah (Sekolah dalam Angka)"
-            description="Angka murid, GTK, rombel, dan ekstrakurikuler."
+          <AdminStatistikManager
             items={data.statistik}
-            columns={[
-              { key: 'label', label: 'Label' },
-              { key: 'nilai', label: 'Nilai (Angka)' },
-              { key: 'satuan', label: 'Satuan' },
-              { key: 'sublabel', label: 'Keterangan Tambahan' }
-            ]}
-            formFields={[
-              { key: 'id', label: 'ID Unik', type: 'text', required: true },
-              { key: 'nilai', label: 'Nilai Angka', type: 'number', required: true },
-              { key: 'label', label: 'Label Utama', type: 'text', required: true },
-              { key: 'sublabel', label: 'Sublabel / Keterangan', type: 'text' },
-              { key: 'satuan', label: 'Satuan (misal: Murid, GTK, Rombel)', type: 'text', required: true },
-              { key: 'urutan', label: 'Urutan Tampil', type: 'number' }
-            ]}
-            onAdd={async (item) => {
-              try {
-                await dataService.add('statistik', item);
-                showSuccess('Statistik berhasil ditambahkan ke database!');
-              } catch (err: any) {
-                showError(`Gagal menambahkan statistik: ${err?.message || err}`);
-                throw err;
-              }
-            }}
-            onUpdate={async (id, item) => {
-              try {
-                await dataService.update('statistik', id, item);
-                showSuccess('Statistik berhasil diperbarui di database!');
-              } catch (err: any) {
-                showError(`Gagal memperbarui statistik: ${err?.message || err}`);
-                throw err;
-              }
-            }}
-            onDelete={async (id) => {
-              try {
-                await dataService.delete('statistik', id);
-                showSuccess('Statistik berhasil dihapus dari database!');
-              } catch (err: any) {
-                showError(`Gagal menghapus statistik: ${err?.message || err}`);
-                throw err;
-              }
-            }}
+            onSuccess={showSuccess}
+            onError={showError}
           />
         )}
 

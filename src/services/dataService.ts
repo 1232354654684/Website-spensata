@@ -132,13 +132,13 @@ export const dataService = {
           const docRef = doc(db, collectionName, docId);
           const snap = await getDoc(docRef);
           if (snap.exists()) {
-            return { id: snap.id, ...snap.data() } as T;
+            return { ...snap.data(), id: snap.id } as T;
           }
           return null;
         } else {
           const colRef = collection(db, collectionName);
           const snap = await getDocs(colRef);
-          const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          const items = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
           return items as unknown as T;
         }
       } catch (err) {
@@ -227,26 +227,66 @@ export const dataService = {
 
   /**
    * Add new item to a collection
+   * If data has an id, uses it as the document ID with setDoc (sanitized to lower_snake_case).
+   * Validates if document with this ID already exists, throwing a clear error.
+   * Strips the 'id' field from document body before saving.
+   * If id is empty, falls back to addDoc.
    */
   async add<T>(collectionName: string, data: T): Promise<string> {
-    let assignedId = (data as any)?.id || `${collectionName}-${Date.now()}`;
+    const rawId = (data as any)?.id;
+    const cleanId = rawId
+      ? String(rawId)
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9_]/g, '_')
+          .replace(/^_+|_+$/g, '')
+      : '';
+
+    let assignedId = cleanId;
+
     if (isFirebaseConfigured() && db) {
       try {
-        const colRef = collection(db, collectionName);
-        const docRef = await addDoc(colRef, data as any);
-        assignedId = docRef.id;
+        if (cleanId) {
+          const docRef = doc(db, collectionName, cleanId);
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            throw new Error(
+              `ID "${cleanId}" sudah terdaftar pada koleksi ${collectionName}. Silakan gunakan ID lain atau edit data yang sudah ada.`
+            );
+          }
+          const { id: _ignored, ...dataToSave } = data as any;
+          await setDoc(docRef, dataToSave);
+          assignedId = cleanId;
+        } else {
+          const { id: _ignored, ...dataToSave } = data as any;
+          const colRef = collection(db, collectionName);
+          const docRef = await addDoc(colRef, dataToSave);
+          assignedId = docRef.id;
+        }
       } catch (err: any) {
         console.error(`Firestore add error for ${collectionName}:`, err);
-        throw new Error(`Gagal menambahkan data ke Firestore (${collectionName}): ${err?.message || err}`);
+        throw new Error(err?.message || `Gagal menambahkan data ke Firestore (${collectionName})`);
+      }
+    } else {
+      if (!assignedId) {
+        assignedId = `${collectionName}-${Date.now()}`;
       }
     }
 
     // Local fallback and memory sync
-    const newItem = { ...(data as any), id: assignedId };
+    const { id: _ignored, ...dataWithoutId } = data as any;
+    const newItem = { ...dataWithoutId, id: assignedId };
     if (!Array.isArray((localStore as any)[collectionName])) {
       (localStore as any)[collectionName] = [];
     }
-    (localStore as any)[collectionName].push(newItem);
+    const existingIdx = (localStore as any)[collectionName].findIndex(
+      (item: any) => item.id === assignedId
+    );
+    if (existingIdx >= 0) {
+      (localStore as any)[collectionName][existingIdx] = newItem;
+    } else {
+      (localStore as any)[collectionName].push(newItem);
+    }
     persistLocalStore();
     notifyLocalListeners(collectionName, (localStore as any)[collectionName]);
     return assignedId;
@@ -352,16 +392,60 @@ export const dataService = {
   },
 
   /**
+   * Sync initial seed items for 'statistik' (students, staff, classes, extracurricular) to Firestore.
+   * Uses setDoc with document ID = id seed so they have predictable, permanent document IDs.
+   */
+  async syncInitialStatistik(force = false): Promise<{ synced: number; total: number; message: string }> {
+    const seedStats: any[] = (rawSeedData as any).statistik || [];
+    let synced = 0;
+
+    if (isFirebaseConfigured() && db) {
+      try {
+        for (const item of seedStats) {
+          const itemId = item.id;
+          if (!itemId) continue;
+          const { id: _ignored, ...dataToSave } = item;
+          const docRef = doc(db, 'statistik', itemId);
+          if (force) {
+            await setDoc(docRef, dataToSave, { merge: true });
+            synced++;
+          } else {
+            const snap = await getDoc(docRef);
+            if (!snap.exists()) {
+              await setDoc(docRef, dataToSave, { merge: true });
+              synced++;
+            }
+          }
+        }
+        return {
+          synced,
+          total: seedStats.length,
+          message: `Berhasil menyinkronkan ${synced} dari ${seedStats.length} data statistik awal ke Firestore.`
+        };
+      } catch (err: any) {
+        console.error('Error in syncInitialStatistik:', err);
+        throw new Error(`Gagal menyinkronkan statistik awal ke Firestore: ${err?.message || err}`);
+      }
+    }
+
+    return {
+      synced: seedStats.length,
+      total: seedStats.length,
+      message: 'Statistik awal tersedia di penyimpanan lokal.'
+    };
+  },
+
+  /**
    * Update existing document using setDoc with { merge: true }
-   * This guarantees that if the document does not yet exist in Firestore,
-   * it will be automatically created without error, and existing fields are merged.
+   * Strips the 'id' field from data before saving to prevent storing redundant/conflicting id inside doc.
    */
   async update<T>(collectionName: string, docId: string, data: Partial<T>): Promise<void> {
+    const { id: _ignored, ...dataToSave } = data as any;
+
     if (isFirebaseConfigured() && db) {
       try {
         const docRef = doc(db, collectionName, docId);
-        // Requirement 1: Use setDoc with { merge: true } instead of updateDoc
-        await setDoc(docRef, data as any, { merge: true });
+        await setDoc(docRef, dataToSave as any, { merge: true });
       } catch (err: any) {
         console.error(`Firestore update error for ${collectionName}/${docId}:`, err);
         throw new Error(`Gagal memperbarui data di Firestore (${collectionName}/${docId}): ${err?.message || err}`);
@@ -374,12 +458,12 @@ export const dataService = {
       if (Array.isArray(val)) {
         const idx = val.findIndex((item: any) => item.id === docId);
         if (idx >= 0) {
-          val[idx] = { ...val[idx], ...data, id: docId };
+          val[idx] = { ...val[idx], ...dataToSave, id: docId };
         } else {
-          val.push({ ...data, id: docId });
+          val.push({ ...dataToSave, id: docId });
         }
       } else {
-        (localStore as any)[collectionName] = { ...val, ...data };
+        (localStore as any)[collectionName] = { ...val, ...dataToSave };
       }
     }
     persistLocalStore();
@@ -431,7 +515,7 @@ export const dataService = {
             docRef,
             (snap) => {
               if (snap.exists()) {
-                callback({ id: snap.id, ...snap.data() } as T);
+                callback({ ...snap.data(), id: snap.id } as T);
               } else {
                 // If doc doesn't exist yet in firestore, provide initial seed fallback
                 if (collectionName in localStore) {
@@ -455,13 +539,17 @@ export const dataService = {
             q,
             (snap) => {
               if (!snap.empty) {
-                const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+                const items = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
                 callback(items as unknown as T);
               } else {
                 // If firestore collection is completely empty:
                 // For 'berita', auto-seed initial news items so post-58 etc. exist in Firestore!
                 if (!initialReceived && collectionName === 'berita') {
                   dataService.syncInitialBerita(false).catch((e) => console.warn('Auto sync berita:', e));
+                }
+                // For 'statistik', auto-seed initial stats so students, staff, etc. exist in Firestore!
+                if (!initialReceived && collectionName === 'statistik') {
+                  dataService.syncInitialStatistik(false).catch((e) => console.warn('Auto sync statistik:', e));
                 }
                 // Provide initial seed fallback on first load, or empty array if explicitly emptied
                 if (!initialReceived && collectionName in localStore) {
@@ -526,7 +614,7 @@ export const dataService = {
           q,
           (snap) => {
             if (!snap.empty) {
-              const items = snap.docs.map((d) => ({ id: d.id, ...d.data() } as GaleriAlbumItem));
+              const items = snap.docs.map((d) => ({ ...d.data(), id: d.id } as GaleriAlbumItem));
               const sorted = sortAlbumsByNewest(items);
               callback(sorted);
             } else {
