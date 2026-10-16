@@ -112,17 +112,21 @@ function AppContent() {
     return <AdminDashboard />;
   }
 
-  // Loading state saat data awal Firestore belum siap
+  // Loading state saat data awal Firestore belum siap (tampilan minimalis tanpa teks)
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100">
-        <div className="w-12 h-12 rounded-full border-4 border-[#0E4A6B]/20 border-t-[#0E4A6B] dark:border-[#E5A823]/20 dark:border-t-[#E5A823] animate-spin mb-4" />
-        <h2 className="text-base font-bold text-slate-800 dark:text-slate-200">
-          Memuat Data Sekolah...
-        </h2>
-        <p className="text-xs text-slate-400 mt-1">
-          Menghubungkan ke basis data terpusat
-        </p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950">
+        {/* Logo sekolah dengan animasi berdenyut pelan */}
+        <img
+          src="/logo-sekolah.png"
+          alt="SMP Negeri 1 Tambak"
+          className="w-24 h-24 object-contain animate-logo-pulse select-none pointer-events-none"
+        />
+
+        {/* Garis progres tipis di bawah logo */}
+        <div className="w-32 h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mt-6 relative">
+          <div className="h-full w-1/2 bg-[#0E4A6B] dark:bg-[#E5A823] rounded-full animate-progress-slide" />
+        </div>
       </div>
     );
   }

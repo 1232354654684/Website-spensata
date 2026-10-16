@@ -148,10 +148,23 @@ export const SchoolDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   useEffect(() => {
     const unsubs: (() => void)[] = [];
 
+    // Tahan tampilan (layar "Memuat Data Sekolah...") sampai data utama dari
+    // Firestore tiba, supaya gambar/teks bawaan dari seed-data.json tidak
+    // sempat berkedip. Batas tunggu 5 detik agar situs tetap terbuka walau
+    // koneksi lambat atau Firestore gagal.
+    const pendingKeys = new Set(['identitas', 'heroSlides', 'berita']);
+    const markReady = (key: string) => {
+      if (pendingKeys.delete(key) && pendingKeys.size === 0) {
+        setLoading(false);
+      }
+    };
+    const loadingTimeout = setTimeout(() => setLoading(false), 5000);
+
     // Single documents
     unsubs.push(
       dataService.subscribe<SchoolIdentity>('identitas', (val) => {
         if (val) setData((prev) => ({ ...prev, identitas: val }));
+        markReady('identitas');
       }, 'info')
     );
 
@@ -210,6 +223,7 @@ export const SchoolDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           const sorted = [...val].sort((a, b) => (a.urutan || 0) - (b.urutan || 0));
           setData((prev) => ({ ...prev, heroSlides: sorted }));
         }
+        markReady('heroSlides');
       })
     );
 
@@ -218,6 +232,7 @@ export const SchoolDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (Array.isArray(val)) {
           setData((prev) => ({ ...prev, berita: val }));
         }
+        markReady('berita');
       })
     );
 
@@ -261,9 +276,8 @@ export const SchoolDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       )
     );
 
-    setLoading(false);
-
     return () => {
+      clearTimeout(loadingTimeout);
       unsubs.forEach((unsub) => unsub());
     };
   }, []);
