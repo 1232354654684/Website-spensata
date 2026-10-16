@@ -329,6 +329,17 @@ export const SchoolDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [currentUser, isDemoAdmin, PRIMARY_ADMIN_EMAILS]);
 
+  // Otomatis sinkronkan data statistik awal jika admin sudah login dan koleksi statistik masih kosong di Firestore
+  useEffect(() => {
+    if (isAdmin && isFirebaseConfigured()) {
+      if (!data.statistik || data.statistik.length === 0) {
+        dataService.syncInitialStatistik(false).catch((err) => {
+          console.warn('Auto sync statistik on admin login error:', err);
+        });
+      }
+    }
+  }, [isAdmin, data.statistik]);
+
   const logoutAdmin = async () => {
     if (isFirebaseConfigured() && auth) {
       await signOut(auth);

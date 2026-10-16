@@ -22,6 +22,7 @@ import {
   normalizeImageUrl,
   isGooglePhotosWebUrl
 } from '../utils/imageHelper';
+import { uploadFoto, hapusFoto } from '../lib/upload';
 
 export const AdminFaviconManager: React.FC = () => {
   const { faviconConfig, saveFavicon, resetFavicon, currentUser } = useSchoolData();
@@ -103,34 +104,23 @@ export const AdminFaviconManager: React.FC = () => {
 
     try {
       setIsProcessing(true);
-      setProgressMsg('Mengompres favicon ke 128x128 px transparan murni...');
+      setProgressMsg('Mengunggah favicon ke server hosting...');
 
-      // 2. Resize ke 128x128 px via canvas, pertahankan transparansi (image/png), base64 < 100 KB
-      const dataUrl = await compressFaviconToDataUrl(file);
+      const uploadedUrl = await uploadFoto(file, 'pengaturan');
 
-      // Verify size strictly under 100 KB
-      const sizeKb = Math.round(dataUrl.length / 1024);
-      if (dataUrl.length > 100 * 1024) {
-        throw new Error(`Ukuran favicon hasil kompresi (${sizeKb} KB) melebihi batas 100 KB.`);
-      }
-
-      setInputUrl(dataUrl);
-      setCurrentUrl(dataUrl);
+      setInputUrl(uploadedUrl);
+      setCurrentUrl(uploadedUrl);
 
       setStatusMsg({
         type: 'success',
-        text: `Favicon berhasil diproses (${sizeKb} KB, PNG transparan). Klik tombol "Simpan Favicon" di atas untuk menerapkan ke seluruh situs.`
+        text: 'Favicon berhasil diunggah ke server hosting! Klik tombol "Simpan Favicon" di atas untuk menerapkan ke seluruh situs.'
       });
     } catch (err: any) {
-      console.error('Favicon processing error:', {
-        code: err?.code,
-        message: err?.message,
-        raw: err
-      });
+      console.error('Favicon upload error:', err);
       setStatusMsg({
         type: 'error',
-        code: err?.code || 'FAVICON_PROCESS_ERROR',
-        text: err?.message || 'Gagal memproses file favicon. Pastikan gambar tidak rusak dan berukuran wajar.'
+        code: 'UPLOAD_ERROR',
+        text: err?.message || 'Gagal mengunggah file favicon ke server upload.'
       });
     } finally {
       setIsProcessing(false);
@@ -177,7 +167,15 @@ export const AdminFaviconManager: React.FC = () => {
       setIsProcessing(true);
       setProgressMsg('Menyimpan konfigurasi favicon ke koleksi pengaturan/situs...');
 
+      const previousUrl = faviconConfig?.faviconUrl;
       await saveFavicon(trimmed);
+
+      // Bersihkan foto lama jika ada di server hosting sendiri
+      if (previousUrl && previousUrl !== trimmed) {
+        hapusFoto(previousUrl).catch((err) =>
+          console.warn('Gagal menghapus favicon lama:', err)
+        );
+      }
 
       setStatusMsg({
         type: 'success',
@@ -260,7 +258,15 @@ export const AdminFaviconManager: React.FC = () => {
       setIsProcessing(true);
       setProgressMsg('Mengembalikan favicon ke bawaan sekolah...');
 
+      const previousUrl = faviconConfig?.faviconUrl;
       await resetFavicon();
+
+      if (previousUrl) {
+        hapusFoto(previousUrl).catch((err) =>
+          console.warn('Gagal menghapus favicon lama:', err)
+        );
+      }
+
       setInputUrl('');
       setCurrentUrl('');
       setImageError(false);

@@ -1,12 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, AlertCircle, CheckCircle2, Image as ImageIcon, Loader2, X, Link, RefreshCw, AlertTriangle } from 'lucide-react';
+import {
+  Upload,
+  AlertCircle,
+  CheckCircle2,
+  Image as ImageIcon,
+  Loader2,
+  X,
+  Link,
+  RefreshCw,
+  AlertTriangle
+} from 'lucide-react';
 import {
   normalizeImageUrl,
   isGooglePhotosWebUrl,
-  validateKepsekImageFile,
-  compressKepsekImageToDataUrl,
   DEFAULT_KEPSEK_PLACEHOLDER
 } from '../utils/imageHelper';
+import { uploadFoto, hapusFoto, UploadFolder } from '../lib/upload';
 
 interface AdminImageUploadFieldProps {
   label: string;
@@ -16,6 +25,7 @@ interface AdminImageUploadFieldProps {
   folder?: string;
   isKepalaSekolah?: boolean;
   placeholder?: string;
+  onUploadStateChange?: (isUploading: boolean) => void;
 }
 
 export const AdminImageUploadField: React.FC<AdminImageUploadFieldProps> = ({
@@ -23,13 +33,15 @@ export const AdminImageUploadField: React.FC<AdminImageUploadFieldProps> = ({
   value,
   onChange,
   required = false,
+  folder,
   isKepalaSekolah = false,
-  placeholder = 'https://... atau tempel tautan Google Drive'
+  placeholder = 'https://... atau tempel tautan Google Drive',
+  onUploadStateChange
 }) => {
   const [inputValue, setInputValue] = useState(value || '');
   const [urlWarning, setUrlWarning] = useState<string | null>(null);
   const [googlePhotosWarning, setGooglePhotosWarning] = useState<string | null>(null);
-  const [uploadError, setUploadError] = useState<{ code?: string; message: string } | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressStatus, setProgressStatus] = useState<string>('');
@@ -55,15 +67,20 @@ export const AdminImageUploadField: React.FC<AdminImageUploadFieldProps> = ({
     // Check Google Photos webpage album link
     if (isGooglePhotosWebUrl(trimmed)) {
       setGooglePhotosWarning(
-        'Tautan ini adalah halaman web album Google Photos, bukan alamat file gambar langsung. Silakan buka fotonya, klik kanan pada gambar > pilih "Salin alamat gambar" (link yang berawalan lh3.googleusercontent.com), lalu tempel di sini; atau gunakan tombol "Upload File".'
+        'Tautan ini adalah halaman web album Google Photos, bukan alamat file gambar langsung. Silakan buka fotonya, klik kanan pada gambar > pilih "Salin alamat gambar", atau gunakan tombol "Upload File".'
       );
     } else {
       setGooglePhotosWarning(null);
     }
 
     // Check protocol
-    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://') && !trimmed.startsWith('data:image/')) {
-      setUrlWarning('URL gambar harus diawali dengan http:// atau https://');
+    if (
+      !trimmed.startsWith('http://') &&
+      !trimmed.startsWith('https://') &&
+      !trimmed.startsWith('data:image/') &&
+      !trimmed.startsWith('/')
+    ) {
+      setUrlWarning('URL gambar harus diawali dengan http://, https://, atau /');
     } else {
       setUrlWarning(null);
     }
@@ -100,6 +117,16 @@ export const AdminImageUploadField: React.FC<AdminImageUploadFieldProps> = ({
     }
   };
 
+  const resolveTargetFolder = (): UploadFolder => {
+    if (isKepalaSekolah || folder === 'kepalaSekolah' || folder === 'profil') return 'profil';
+    if (folder === 'berita') return 'berita';
+    if (folder === 'galeri' || folder === 'galeriFoto') return 'galeri';
+    if (folder === 'guru' || folder === 'staff') return 'guru';
+    if (folder === 'prestasi') return 'prestasi';
+    if (folder === 'pengaturan' || folder === 'heroSlides' || folder === 'hero') return 'pengaturan';
+    return 'lainnya';
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -110,58 +137,46 @@ export const AdminImageUploadField: React.FC<AdminImageUploadFieldProps> = ({
     setUploadSuccess(null);
     setImageLoadError(false);
 
-    // 1. Validasi JPG/PNG/WEBP maks 10 MB
-    const validation = validateKepsekImageFile(file);
-    if (!validation.valid) {
-      const errMsg = validation.error || 'Format file tidak valid.';
-      console.error('File validation failed:', errMsg);
-      setUploadError({
-        code: 'VALIDATION_FAILED',
-        message: errMsg
-      });
-      return;
-    }
+    const oldUrl = inputValue;
+    const targetFolder = resolveTargetFolder();
 
-    // 2. Kompresi Canvas (maks 600px, JPEG, 0.8, Base64 < 500 KB, timeout 20 detik)
-    // JANGAN pakai Firebase Storage. Hapus kode uploadBytes/Storage.
     setIsProcessing(true);
-    setProgressStatus('Mengompres foto ke resolusi optimal (lebar maks. 600 px)...');
+    setProgressStatus('Mengompres dan mengunggah gambar ke server hosting...');
+    onUploadStateChange?.(true);
 
     try {
-      const dataUrl = await compressKepsekImageToDataUrl(file);
+      const uploadedUrl = await uploadFoto(file, targetFolder);
 
-      // Verify size strictly under 500 KB (512,000 bytes)
-      const sizeKb = Math.round(dataUrl.length / 1024);
-      if (dataUrl.length > 500 * 1024) {
-        throw new Error(`Hasil kompresi (${sizeKb} KB) melebihi batas 500 KB. Harap pilih foto lain.`);
+      // Jika sebelumnya ada foto lama di hosting sendiri, hapus foto lama
+      if (oldUrl && oldUrl !== uploadedUrl) {
+        hapusFoto(oldUrl).catch((err) =>
+          console.warn('Gagal menghapus foto lama:', err)
+        );
       }
 
-      setInputValue(dataUrl);
-      checkUrlIssues(dataUrl);
-      onChange(dataUrl);
+      setInputValue(uploadedUrl);
+      checkUrlIssues(uploadedUrl);
+      onChange(uploadedUrl);
 
-      setUploadSuccess(`Foto berhasil dikompres & siap disimpan (${sizeKb} KB, JPEG)!`);
+      setUploadSuccess('Foto berhasil diunggah ke server hosting!');
       setTimeout(() => setUploadSuccess(null), 4000);
     } catch (err: any) {
-      const errCode = err?.code || 'COMPRESSION_ERROR';
-      const errMsg = err?.message || 'Gagal memproses gambar.';
-      console.error('Error proses upload foto kepala sekolah:', {
-        code: errCode,
-        message: errMsg,
-        raw: err
-      });
-      setUploadError({
-        code: errCode,
-        message: errMsg
-      });
+      console.error('Upload foto error:', err);
+      const errMsg = err?.message || 'Gagal menghubungi server upload. Coba lagi nanti.';
+      setUploadError(errMsg);
     } finally {
-      // Pastikan loading selalu dimatikan di finally
       setIsProcessing(false);
       setProgressStatus('');
+      onUploadStateChange?.(false);
     }
   };
 
   const handleClearImage = () => {
+    if (inputValue) {
+      hapusFoto(inputValue).catch((err) =>
+        console.warn('Gagal menghapus foto yang dibersihkan:', err)
+      );
+    }
     setInputValue('');
     setUrlWarning(null);
     setGooglePhotosWarning(null);
@@ -178,11 +193,9 @@ export const AdminImageUploadField: React.FC<AdminImageUploadFieldProps> = ({
         <label className="block text-xs font-bold text-slate-200">
           {label} {required && <span className="text-rose-400">*</span>}
         </label>
-        {isKepalaSekolah && (
-          <span className="text-[10px] font-medium text-[#E5A823] bg-[#E5A823]/10 border border-[#E5A823]/30 px-2.5 py-0.5 rounded-full self-start sm:self-auto">
-            Canvas Maks 600px • JPEG 0.8 • Base64 &lt; 500 KB
-          </span>
-        )}
+        <span className="text-[10px] font-medium text-slate-400 bg-slate-800/80 border border-slate-700 px-2.5 py-0.5 rounded-full self-start sm:self-auto">
+          Server Hosting ({resolveTargetFolder()})
+        </span>
       </div>
 
       {/* URL Input Bar + Action Buttons */}
@@ -212,7 +225,7 @@ export const AdminImageUploadField: React.FC<AdminImageUploadFieldProps> = ({
             {isProcessing ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin text-[#E5A823]" />
-                <span>Memproses...</span>
+                <span>Mengunggah...</span>
               </>
             ) : (
               <>
@@ -236,7 +249,7 @@ export const AdminImageUploadField: React.FC<AdminImageUploadFieldProps> = ({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
             className="hidden"
             onChange={handleFileUpload}
           />
@@ -245,7 +258,7 @@ export const AdminImageUploadField: React.FC<AdminImageUploadFieldProps> = ({
 
       {/* Helper text & file validation note */}
       <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-400 gap-1">
-        <span>Format diterima: JPG, PNG, WEBP (maks. 10 MB, dikompres canvas &lt; 500 KB).</span>
+        <span>Format: JPG, PNG, WEBP, GIF (maks. 5 MB). Otomatis dioptimalkan sebelum diunggah.</span>
         {/drive\.google\.com/i.test(inputValue) && (
           <button
             type="button"
@@ -262,7 +275,7 @@ export const AdminImageUploadField: React.FC<AdminImageUploadFieldProps> = ({
       {isProcessing && (
         <div className="p-3 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-200 text-xs flex items-center gap-2.5 animate-pulse">
           <Loader2 className="w-4 h-4 animate-spin flex-shrink-0 text-sky-400" />
-          <span>{progressStatus || 'Sedang memproses gambar (maks 20 detik)...'}</span>
+          <span>{progressStatus || 'Sedang mengunggah foto ke server...'}</span>
         </div>
       )}
 
@@ -278,11 +291,11 @@ export const AdminImageUploadField: React.FC<AdminImageUploadFieldProps> = ({
       {isDriveConverted && (
         <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-400" />
-          <span>Tautan Google Drive otomatis dikonversi ke tautan langsung gambar (lh3.googleusercontent.com)!</span>
+          <span>Tautan Google Drive otomatis dikonversi ke tautan langsung gambar!</span>
         </div>
       )}
 
-      {/* Google Photos Warning (photos.app.goo.gl or share link) */}
+      {/* Google Photos Warning */}
       {googlePhotosWarning && (
         <div className="p-3 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs flex items-start gap-2.5 leading-relaxed">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400 mt-0.5" />
@@ -301,14 +314,14 @@ export const AdminImageUploadField: React.FC<AdminImageUploadFieldProps> = ({
         </div>
       )}
 
-      {/* Error Alert with error.code & error.message */}
+      {/* Error Alert */}
       {uploadError && (
         <div className="p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2.5">
           <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400 mt-0.5" />
           <div className="flex-1 space-y-1">
-            <div className="font-bold text-rose-200">Gagal Memproses / Mengunggah Foto</div>
-            <div className="font-mono text-[11px] bg-slate-950/80 px-2 py-1 rounded border border-rose-500/30 text-rose-300">
-              [{uploadError.code || 'ERROR'}]: {uploadError.message}
+            <div className="font-bold text-rose-200">Gagal Mengunggah Foto</div>
+            <div className="text-[11px] bg-slate-950/80 px-2 py-1 rounded border border-rose-500/30 text-rose-300">
+              {uploadError}
             </div>
           </div>
         </div>
@@ -350,20 +363,17 @@ export const AdminImageUploadField: React.FC<AdminImageUploadFieldProps> = ({
           <div className="text-xs font-semibold text-slate-300">Pratinjau Tampilan</div>
           {imageLoadError ? (
             <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[11px] leading-relaxed">
-              ⚠️ <strong>Link tidak bisa ditampilkan:</strong> Browser gagal memuat file gambar dari tautan ini. Gunakan link langsung ke file gambar (berawalan <code>lh3.googleusercontent.com</code> atau berakhiran <code>.jpg</code>) atau gunakan tombol <strong>Upload File</strong>.
+              ⚠️ <strong>Link tidak bisa ditampilkan:</strong> Browser gagal memuat file gambar dari tautan ini. Gunakan link langsung ke file gambar atau gunakan tombol <strong>Upload File</strong>.
             </div>
           ) : inputValue ? (
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              Pratinjau sebelum disimpan. Klik tombol <strong>Simpan Perubahan</strong> di atas untuk menyimpan ke Firestore.
-              {inputValue.startsWith('data:image/') && (
-                <span className="block text-emerald-400 font-mono text-[10px] mt-0.5">
-                  ✓ Foto terkompresi & siap disimpan ke Firestore (tanpa Storage)
-                </span>
-              )}
+              Foto siap digunakan. Klik tombol <strong>Simpan Perubahan</strong> untuk menyimpan URL foto ke Firestore.
             </p>
           ) : (
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              Jika dikosongkan, halaman publik akan otomatis menggunakan avatar placeholder resmi kepala sekolah.
+              {isKepalaSekolah
+                ? 'Jika dikosongkan, halaman publik akan otomatis menggunakan avatar placeholder resmi kepala sekolah.'
+                : 'Pilih file dari perangkat Anda atau masukkan tautan gambar langsung.'}
             </p>
           )}
         </div>

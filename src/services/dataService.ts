@@ -11,12 +11,8 @@ import {
   query,
   orderBy
 } from 'firebase/firestore';
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL
-} from 'firebase/storage';
-import { db, storage, isFirebaseConfigured, auth } from './firebase';
+import { db, isFirebaseConfigured, auth } from './firebase';
+import { uploadFoto, UploadFolder } from '../lib/upload';
 import rawSeedData from '../../seed-data.json';
 import { SchoolStoreData, GaleriAlbumItem } from '../types';
 
@@ -544,11 +540,11 @@ export const dataService = {
               } else {
                 // If firestore collection is completely empty:
                 // For 'berita', auto-seed initial news items so post-58 etc. exist in Firestore!
-                if (!initialReceived && collectionName === 'berita') {
+                if (!initialReceived && collectionName === 'berita' && auth?.currentUser) {
                   dataService.syncInitialBerita(false).catch((e) => console.warn('Auto sync berita:', e));
                 }
                 // For 'statistik', auto-seed initial stats so students, staff, etc. exist in Firestore!
-                if (!initialReceived && collectionName === 'statistik') {
+                if (!initialReceived && collectionName === 'statistik' && auth?.currentUser) {
                   dataService.syncInitialStatistik(false).catch((e) => console.warn('Auto sync statistik:', e));
                 }
                 // Provide initial seed fallback on first load, or empty array if explicitly emptied
@@ -660,37 +656,39 @@ export const dataService = {
   },
 
   /**
-   * Upload image file or compressed Blob to Firebase Storage with local DataURL fallback
+   * Upload image file to PHP hosting endpoint
    */
-  async uploadFile(fileOrBlob: File | Blob, folder = 'uploads', customFileName?: string): Promise<string> {
-    if (isFirebaseConfigured() && storage) {
-      try {
-        const isFile = fileOrBlob instanceof File;
-        const ext = fileOrBlob.type === 'image/png' ? 'png' : fileOrBlob.type === 'image/webp' ? 'webp' : 'jpg';
-        const rawName = customFileName || (isFile ? (fileOrBlob as File).name : `photo-${Date.now()}.${ext}`);
-        const cleanName = `${Date.now()}-${rawName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-        const fileRef = ref(storage, `${folder}/${cleanName}`);
-        
-        await uploadBytes(fileRef, fileOrBlob, {
-          contentType: fileOrBlob.type || 'image/jpeg'
-        });
-        const url = await getDownloadURL(fileRef);
-        console.info('Firebase Storage upload success:', url);
-        return url;
-      } catch (err: any) {
-        console.warn(
-          `Firebase Storage upload failed (code: ${err?.code || 'unknown'}, message: ${err?.message || err}). Falling back to Base64 Data URL.`
-        );
-      }
+  async uploadFile(fileOrBlob: File | Blob, folder = 'lainnya', customFileName?: string): Promise<string> {
+    const validFolders: UploadFolder[] = [
+      'berita',
+      'galeri',
+      'profil',
+      'guru',
+      'prestasi',
+      'pengaturan',
+      'lainnya'
+    ];
+    const targetFolder: UploadFolder = validFolders.includes(folder as UploadFolder)
+      ? (folder as UploadFolder)
+      : 'lainnya';
+
+    let file: File;
+    if (fileOrBlob instanceof File) {
+      file = fileOrBlob;
+    } else {
+      const ext =
+        fileOrBlob.type === 'image/png'
+          ? 'png'
+          : fileOrBlob.type === 'image/webp'
+          ? 'webp'
+          : 'jpg';
+      const fileName = customFileName || `photo-${Date.now()}.${ext}`;
+      file = new File([fileOrBlob], fileName, {
+        type: fileOrBlob.type || 'image/jpeg'
+      });
     }
 
-    // Fallback: convert file or compressed blob to Base64 Data URL
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (e) => reject(new Error('Gagal mengonversi gambar ke Base64: ' + e));
-      reader.readAsDataURL(fileOrBlob);
-    });
+    return await uploadFoto(file, targetFolder);
   },
 
   /**
