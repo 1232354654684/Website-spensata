@@ -21,7 +21,7 @@ import { GaleriFotoItem } from './types';
 function AppContent() {
   const { data, isLoading } = useSchoolData();
   const [currentPage, setCurrentPage] = useState<string>('beranda');
-  const [selectedArticleId, setSelectedArticleId] = useState<string>('');
+  const [selectedArticleSlug, setSelectedArticleSlug] = useState<string>('');
   const [lightboxItem, setLightboxItem] = useState<GaleriFotoItem | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
@@ -56,19 +56,40 @@ function AppContent() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Hash-based navigation synchronization
+  // Synchronize route with pathname (/berita/:slug) and hash routes (/#profil, /#berita, etc.)
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '') || 'beranda';
-      const parts = hash.split('/');
-      const mainRoute = parts[0];
+    const syncRouteFromLocation = () => {
+      const path = window.location.pathname;
+      const hash = window.location.hash.replace(/^#\/?/, '');
 
-      if (mainRoute === 'admin') {
+      // 1. Path format: /berita/:slug
+      if (path.startsWith('/berita/')) {
+        const rawSlug = decodeURIComponent(path.replace(/^\/berita\//, '').split('/')[0] || '').trim();
+        if (rawSlug) {
+          setSelectedArticleSlug(rawSlug);
+          setCurrentPage('berita-detail');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+      }
+
+      // 2. Backward compatibility: #berita/:id or #berita/:slug
+      if (hash.startsWith('berita/')) {
+        const legacyParam = decodeURIComponent(hash.replace(/^berita\//, '').split('/')[0] || '').trim();
+        if (legacyParam) {
+          setSelectedArticleSlug(legacyParam);
+          setCurrentPage('berita-detail');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+      }
+
+      // 3. Regular routes (admin, berita/arsip, beranda, profil, visi-misi, galeri-foto, galeri-video, e-learning, hubungi-kami)
+      const targetRoute = hash || (path === '/' ? 'beranda' : path.replace(/^\//, ''));
+
+      if (targetRoute === 'admin') {
         setCurrentPage('admin');
-      } else if (mainRoute === 'berita' && parts[1]) {
-        setSelectedArticleId(parts[1]);
-        setCurrentPage('berita-detail');
-      } else if (mainRoute === 'berita' || mainRoute === 'arsip') {
+      } else if (targetRoute === 'berita' || targetRoute === 'arsip') {
         setCurrentPage('berita');
       } else if (
         [
@@ -79,33 +100,90 @@ function AppContent() {
           'galeri-video',
           'e-learning',
           'hubungi-kami'
-        ].includes(mainRoute)
+        ].includes(targetRoute)
       ) {
-        setCurrentPage(mainRoute);
+        setCurrentPage(targetRoute);
+      } else {
+        if (path === '/' || !path) {
+          setCurrentPage('beranda');
+        } else if (path === '/berita' || path === '/arsip') {
+          setCurrentPage('berita');
+        } else {
+          setCurrentPage('beranda');
+        }
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    window.addEventListener('hashchange', handleHashChange);
-    // Initial check
-    if (window.location.hash) {
-      handleHashChange();
-    }
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', syncRouteFromLocation);
+    window.addEventListener('hashchange', syncRouteFromLocation);
+    syncRouteFromLocation();
+
+    return () => {
+      window.removeEventListener('popstate', syncRouteFromLocation);
+      window.removeEventListener('hashchange', syncRouteFromLocation);
+    };
   }, []);
 
   const navigateTo = (pageId: string) => {
-    window.location.hash = pageId;
-    setCurrentPage(pageId);
+    if (pageId === 'beranda') {
+      window.history.pushState(null, '', '/');
+      setCurrentPage('beranda');
+    } else if (pageId === 'berita' || pageId === 'arsip') {
+      window.history.pushState(null, '', '/#berita');
+      setCurrentPage('berita');
+    } else if (pageId === 'admin') {
+      window.history.pushState(null, '', '/#admin');
+      setCurrentPage('admin');
+    } else {
+      window.history.pushState(null, '', `/#${pageId}`);
+      setCurrentPage(pageId);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSelectArticle = (articleId: string) => {
-    setSelectedArticleId(articleId);
-    window.location.hash = `berita/${articleId}`;
+  const handleSelectArticle = (slugOrId: string) => {
+    // Resolve slug if available
+    const matched = data.berita.find(
+      (a) =>
+        a.slug === slugOrId ||
+        a.id === slugOrId ||
+        (a.slug && a.slug.toLowerCase() === slugOrId.toLowerCase())
+    );
+    const targetSlug = matched?.slug || slugOrId;
+
+    window.history.pushState(null, '', `/berita/${targetSlug}`);
+    setSelectedArticleSlug(targetSlug);
     setCurrentPage('berita-detail');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const publishedArticles = data.berita.filter((b) => b.status === 'Terbit');
+  const activeArticle = selectedArticleSlug
+    ? publishedArticles.find(
+        (a) =>
+          a.slug === selectedArticleSlug ||
+          a.id === selectedArticleSlug ||
+          (a.slug && a.slug.toLowerCase() === selectedArticleSlug.toLowerCase())
+      ) ||
+      data.berita.find(
+        (a) =>
+          a.slug === selectedArticleSlug ||
+          a.id === selectedArticleSlug ||
+          (a.slug && a.slug.toLowerCase() === selectedArticleSlug.toLowerCase())
+      )
+    : null;
+
+  // Otomatis arahkan tautan lama (#berita/:id atau /berita/:id) ke /berita/:slug bersih jika berita punya slug
+  useEffect(() => {
+    if (currentPage === 'berita-detail' && activeArticle) {
+      const bestSlug = activeArticle.slug || activeArticle.id;
+      const expectedPath = `/berita/${bestSlug}`;
+      if (window.location.pathname !== expectedPath || window.location.hash) {
+        window.history.replaceState(null, '', expectedPath);
+      }
+    }
+  }, [currentPage, activeArticle]);
 
   // Admin route /#admin rendering
   if (currentPage === 'admin') {
@@ -130,12 +208,6 @@ function AppContent() {
       </div>
     );
   }
-
-  const publishedArticles = data.berita.filter((b) => b.status === 'Terbit');
-  const activeArticle = selectedArticleId
-    ? publishedArticles.find((a) => a.id === selectedArticleId) ||
-      data.berita.find((a) => a.id === selectedArticleId)
-    : null;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200">
@@ -191,10 +263,16 @@ function AppContent() {
               <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto">
                 Tulisan atau artikel yang Anda cari tidak tersedia atau mungkin telah dipindahkan.
               </p>
-              <div className="pt-2">
+              <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+                <button
+                  onClick={() => navigateTo('beranda')}
+                  className="px-6 py-3 rounded-xl bg-[#0E4A6B] hover:bg-[#0a3550] text-white font-bold text-sm shadow-md transition-all cursor-pointer"
+                >
+                  Kembali ke Beranda
+                </button>
                 <button
                   onClick={() => navigateTo('berita')}
-                  className="px-6 py-3 rounded-xl bg-[#0E4A6B] hover:bg-[#0a3550] text-white font-bold text-sm shadow-md transition-all cursor-pointer"
+                  className="px-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-sm transition-all cursor-pointer"
                 >
                   Lihat Semua Berita
                 </button>

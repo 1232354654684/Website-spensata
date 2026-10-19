@@ -16,7 +16,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, onSelect }) => {
 
   return (
     <article
-      onClick={() => onSelect(article.id)}
+      onClick={() => onSelect(article.slug || article.id)}
       className="group cursor-pointer bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col"
     >
       {/* Thumbnail */}

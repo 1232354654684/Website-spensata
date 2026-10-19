@@ -15,6 +15,7 @@ import { db, isFirebaseConfigured, auth } from './firebase';
 import { uploadFoto, UploadFolder } from '../lib/upload';
 import rawSeedData from '../../seed-data.json';
 import { SchoolStoreData, GaleriAlbumItem } from '../types';
+import { generateUniqueSlug } from '../utils/slugHelper';
 
 /**
  * Shared helper to parse album date string or timestamp for accurate descending sorting
@@ -385,6 +386,85 @@ export const dataService = {
       total: seedNews.length,
       message: 'Berita awal tersedia di penyimpanan lokal.'
     };
+  },
+
+  /**
+   * Generates clean, unique slugs for any news documents in 'berita' that don't have a slug yet.
+   * Preserves all existing slugs without alteration.
+   */
+  async generateSlugsForLegacyBerita(): Promise<{ processed: number; total: number; message: string }> {
+    let processed = 0;
+    let total = 0;
+
+    if (isFirebaseConfigured() && db) {
+      try {
+        const colRef = collection(db, 'berita');
+        const snap = await getDocs(colRef);
+        total = snap.size;
+
+        const allDocs = snap.docs.map((d) => ({ ...(d.data() as any), id: d.id }));
+        const usedSlugs = new Set<string>();
+
+        // Collect existing non-empty slugs first
+        for (const item of allDocs) {
+          if (item.slug && typeof item.slug === 'string' && item.slug.trim()) {
+            usedSlugs.add(item.slug.trim());
+          }
+        }
+
+        // Process items missing slug
+        for (const item of allDocs) {
+          if (!item.slug || typeof item.slug !== 'string' || !item.slug.trim()) {
+            const newSlug = generateUniqueSlug(item.judul || 'berita', Array.from(usedSlugs));
+            usedSlugs.add(newSlug);
+
+            const docRef = doc(db, 'berita', item.id);
+            await setDoc(docRef, { slug: newSlug }, { merge: true });
+            processed++;
+          }
+        }
+
+        return {
+          processed,
+          total,
+          message:
+            processed > 0
+              ? `Berhasil membuat slug untuk ${processed} berita lama.`
+              : 'Semua berita sudah memiliki slug (0 berita diproses).'
+        };
+      } catch (err: any) {
+        console.error('Error in generateSlugsForLegacyBerita:', err);
+        throw new Error(`Gagal membuat slug berita lama: ${err?.message || err}`);
+      }
+    } else {
+      // Local fallback
+      const news = (localStore as any).berita || [];
+      total = news.length;
+      const usedSlugs = new Set<string>();
+      for (const item of news) {
+        if (item.slug && item.slug.trim()) {
+          usedSlugs.add(item.slug.trim());
+        }
+      }
+      for (const item of news) {
+        if (!item.slug || !item.slug.trim()) {
+          const newSlug = generateUniqueSlug(item.judul || 'berita', Array.from(usedSlugs));
+          usedSlugs.add(newSlug);
+          item.slug = newSlug;
+          processed++;
+        }
+      }
+      persistLocalStore();
+      notifyLocalListeners('berita', (localStore as any).berita);
+      return {
+        processed,
+        total,
+        message:
+          processed > 0
+            ? `Berhasil membuat slug untuk ${processed} berita lama.`
+            : 'Semua berita sudah memiliki slug (0 berita diproses).'
+      };
+    }
   },
 
   /**

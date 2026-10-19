@@ -39,6 +39,7 @@ import { AdminAccountsManager } from './AdminAccountsManager';
 import { AdminStatistikManager } from './AdminStatistikManager';
 import { SchoolLogo } from '../components/SchoolLogo';
 import { validateImageFile, compressImageClientSide } from '../utils/imageHelper';
+import { generateUniqueSlug } from '../utils/slugHelper';
 import {
   SchoolIdentity,
   Headmaster,
@@ -787,29 +788,53 @@ export const AdminDashboard: React.FC = () => {
             description="Kelola warta, pengumuman, dan artikel sekolah. Terhubung langsung dengan Firestore realtime."
             items={data.berita}
             extraAction={
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    setIsSaving(true);
-                    const res = await dataService.syncInitialBerita(true);
-                    showSuccess(res.message);
-                  } catch (err: any) {
-                    showError(`Gagal menyinkronkan: ${err?.message || err}`);
-                  } finally {
-                    setIsSaving(false);
-                  }
-                }}
-                disabled={isSaving}
-                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5 shadow cursor-pointer disabled:opacity-50"
-                title="Tulis ulang atau lengkapi seluruh data berita awal (post-58, post-57, dll) ke database Firestore"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 text-[#E5A823] ${isSaving ? 'animate-spin' : ''}`} />
-                <span>Sinkronkan Berita Awal (post-58, dll)</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      setIsSaving(true);
+                      const res = await dataService.syncInitialBerita(true);
+                      showSuccess(res.message);
+                    } catch (err: any) {
+                      showError(`Gagal menyinkronkan: ${err?.message || err}`);
+                    } finally {
+                      setIsSaving(false);
+                    }
+                  }}
+                  disabled={isSaving}
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5 shadow cursor-pointer disabled:opacity-50"
+                  title="Tulis ulang atau lengkapi seluruh data berita awal (post-58, post-57, dll) ke database Firestore"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-[#E5A823] ${isSaving ? 'animate-spin' : ''}`} />
+                  <span>Sinkronkan Berita Awal (post-58, dll)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      setIsSaving(true);
+                      const res = await dataService.generateSlugsForLegacyBerita();
+                      showSuccess(res.message);
+                    } catch (err: any) {
+                      showError(`Gagal membuat slug: ${err?.message || err}`);
+                    } finally {
+                      setIsSaving(false);
+                    }
+                  }}
+                  disabled={isSaving}
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5 shadow cursor-pointer disabled:opacity-50"
+                  title="Buat slug untuk semua berita yang belum punya field slug"
+                >
+                  <FileText className={`w-3.5 h-3.5 text-sky-400 ${isSaving ? 'animate-pulse' : ''}`} />
+                  <span>Buat Slug Berita Lama</span>
+                </button>
+              </div>
             }
             columns={[
               { key: 'judul', label: 'Judul Berita' },
+              { key: 'slug', label: 'Slug / URL Bersih' },
               { key: 'tanggal', label: 'Tanggal' },
               { key: 'kategori', label: 'Kategori' },
               {
@@ -830,7 +855,7 @@ export const AdminDashboard: React.FC = () => {
             ]}
             formFields={[
               { key: 'judul', label: 'Judul Berita', type: 'text', required: true },
-              { key: 'slug', label: 'Slug / URL Bersih (opsional)', type: 'text' },
+              { key: 'slug', label: 'Slug / URL Bersih (opsional, otomatis dibuat jika kosong)', type: 'text' },
               {
                 key: 'status',
                 label: 'Status Publikasi',
@@ -850,14 +875,10 @@ export const AdminDashboard: React.FC = () => {
             ]}
             onAdd={async (item) => {
               try {
-                const slug =
-                  item.slug ||
-                  item.judul
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/(^-|-$)+/g, '');
-                await dataService.add('berita', { ...item, slug });
-                showSuccess('Berita berhasil ditambahkan ke database!');
+                const existingSlugs = (data.berita || []).map((b) => b.slug).filter(Boolean);
+                const uniqueSlug = generateUniqueSlug(item.judul, existingSlugs, item.slug);
+                await dataService.add('berita', { ...item, slug: uniqueSlug });
+                showSuccess(`Berita berhasil ditambahkan dengan slug "${uniqueSlug}"!`);
               } catch (err: any) {
                 showError(`Gagal menyimpan berita: ${err?.message || err}`);
                 throw err;
@@ -865,7 +886,17 @@ export const AdminDashboard: React.FC = () => {
             }}
             onUpdate={async (id, item) => {
               try {
-                await dataService.update('berita', id, item);
+                const existingItem = (data.berita || []).find((b) => b.id === id);
+                // Pertahankan slug lama jika sudah ada, jangan diubah meskipun judul berita diedit
+                let slugToSave = existingItem?.slug;
+                if (!slugToSave || !slugToSave.trim()) {
+                  const existingSlugs = (data.berita || [])
+                    .filter((b) => b.id !== id)
+                    .map((b) => b.slug)
+                    .filter(Boolean);
+                  slugToSave = generateUniqueSlug(item.judul || existingItem?.judul || '', existingSlugs, item.slug);
+                }
+                await dataService.update('berita', id, { ...item, slug: slugToSave });
                 showSuccess('Berita berhasil diperbarui di database!');
               } catch (err: any) {
                 showError(`Gagal memperbarui berita: ${err?.message || err}`);

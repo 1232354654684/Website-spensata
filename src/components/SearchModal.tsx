@@ -172,7 +172,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                       <button
                         key={art.id}
                         onClick={() => {
-                          onNavigateToArticle(art.id);
+                          onNavigateToArticle(art.slug || art.id);
                           onClose();
                         }}
                         className="w-full text-left p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-start justify-between group transition-colors gap-3 cursor-pointer"

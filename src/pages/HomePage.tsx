@@ -130,7 +130,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
 
           <button
-            onClick={() => onSelectArticle(maklumatArticle.id)}
+            onClick={() => onSelectArticle(maklumatArticle.slug || maklumatArticle.id)}
             className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition-colors border border-white/20 self-start sm:self-auto cursor-pointer"
           >
             <span>Baca Maklumat</span>

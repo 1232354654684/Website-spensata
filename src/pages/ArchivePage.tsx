@@ -118,7 +118,7 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({ onSelectArticle }) => 
             {filteredArticles.map((art) => (
               <article
                 key={art.id}
-                onClick={() => onSelectArticle(art.id)}
+                onClick={() => onSelectArticle(art.slug || art.id)}
                 className="py-5 cursor-pointer group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors"
               >
                 <div className="space-y-1.5 flex-1">
