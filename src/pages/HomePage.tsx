@@ -14,7 +14,7 @@ import { StatsCounter } from '../components/StatsCounter';
 import { NewsCard } from '../components/NewsCard';
 import { GaleriAlbumCard } from '../components/GaleriAlbumCard';
 import { useSchoolData } from '../context/SchoolDataContext';
-import { dataService } from '../services/dataService';
+import { dataService, sortAlbumsByNewest } from '../services/dataService';
 import { GaleriAlbumItem, GaleriFotoItem } from '../types';
 import { normalizeImageUrl, DEFAULT_KEPSEK_PLACEHOLDER } from '../utils/imageHelper';
 
@@ -23,6 +23,12 @@ import { normalizeImageUrl, DEFAULT_KEPSEK_PLACEHOLDER } from '../utils/imageHel
  * Ubah nilai variabel ini untuk mengatur berapa banyak berita yang ditampilkan di Beranda
  */
 export const JUMLAH_BERITA_BERANDA = 4;
+
+/**
+ * KONFIGURASI JUMLAH ALBUM GALERI TERBARU DI BERANDA
+ * Menampilkan 3 album paling baru dalam 1 baris rapi di desktop
+ */
+export const JUMLAH_GALERI_BERANDA = 3;
 
 interface HomePageProps {
   onNavigate: (pageId: string) => void;
@@ -64,9 +70,10 @@ export const HomePage: React.FC<HomePageProps> = ({
     };
   }, []);
 
-  // Urutkan dari tanggal terbaru dan batasi tampilkan 6 album/foto terbaru saja
+  // Urutkan album galeri berdasarkan tanggal dari yang terbaru (descending), lalu batasi 3 album terbaru
   const latestGaleriAlbums = useMemo(() => {
-    return galeriAlbums.slice(0, 6);
+    const sorted = sortAlbumsByNewest(galeriAlbums);
+    return sorted.slice(0, JUMLAH_GALERI_BERANDA);
   }, [galeriAlbums]);
 
   // Helper untuk mendapatkan ID YouTube dari URL

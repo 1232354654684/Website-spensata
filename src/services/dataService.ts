@@ -56,7 +56,13 @@ export function parseDateString(dateStr?: string, timestamp?: any): number {
       day = parseInt(parts[2], 10);
     }
 
-    const monthIndex = monthMap[monthName] ?? -1;
+    let monthIndex = monthMap[monthName] ?? -1;
+    if (monthIndex === -1 && !isNaN(parseInt(monthName, 10))) {
+      const numMonth = parseInt(monthName, 10);
+      if (numMonth >= 1 && numMonth <= 12) {
+        monthIndex = numMonth - 1;
+      }
+    }
     if (monthIndex !== -1 && !isNaN(day) && !isNaN(year)) {
       return new Date(year, monthIndex, day).getTime();
     }
