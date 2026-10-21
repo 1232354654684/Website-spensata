@@ -12,6 +12,7 @@ import {
 import { Breadcrumb } from '../components/Breadcrumb';
 import { BeritaItem } from '../types';
 import { useSchoolData } from '../context/SchoolDataContext';
+import { sortNewsByNewest, formatNewsDisplayDate } from '../utils/dateHelper';
 
 interface ArticleDetailPageProps {
   article: BeritaItem;
@@ -48,7 +49,7 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
     };
   }, [title, data.identitas.nama]);
 
-  const publishedArticles = data.berita.filter((b) => b.status === 'Terbit');
+  const publishedArticles = sortNewsByNewest(data.berita.filter((b) => b.status === 'Terbit'));
 
   const currentIndex = publishedArticles.findIndex((a) => a.id === article.id || a.slug === article.slug);
   const prevArticle = currentIndex > 0 ? publishedArticles[currentIndex - 1] : null;
@@ -127,12 +128,10 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
         <div className="p-6 sm:p-10 space-y-6">
           {/* Metadata */}
           <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            {date && (
-              <span className="inline-flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-slate-400" />
-                <span>{date}</span>
-              </span>
-            )}
+            <span className="inline-flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-slate-400" />
+              <span>{formatNewsDisplayDate(article)}</span>
+            </span>
             {author && (
               <>
                 <span aria-hidden="true">·</span>
@@ -264,7 +263,7 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
                     {item.judul}
                   </h4>
                   <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
-                    <span>{item.tanggal.split(' ')[0]}</span>
+                    <span>{formatNewsDisplayDate(item)}</span>
                     <span>·</span>
                     <span>{item.penulis}</span>
                   </div>

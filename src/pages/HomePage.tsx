@@ -17,6 +17,7 @@ import { useSchoolData } from '../context/SchoolDataContext';
 import { dataService, sortAlbumsByNewest } from '../services/dataService';
 import { GaleriAlbumItem, GaleriFotoItem } from '../types';
 import { normalizeImageUrl, DEFAULT_KEPSEK_PLACEHOLDER } from '../utils/imageHelper';
+import { sortNewsByNewest } from '../utils/dateHelper';
 
 /**
  * KONFIGURASI JUMLAH BERITA TERBARU DI BERANDA
@@ -83,30 +84,20 @@ export const HomePage: React.FC<HomePageProps> = ({
     return match ? match[1] : '';
   };
 
-  // Urutkan berita dari tanggal terbaru ke terlama, lalu batasi dengan JUMLAH_BERITA_BERANDA
+  // Urutkan berita dari tanggal terbaru ke terlama secara descending, lalu batasi dengan JUMLAH_BERITA_BERANDA (4 berita)
   // Hanya tampilkan berita berstatus 'Terbit'
   const latestArticles = useMemo(() => {
     const published = data.berita.filter((b) => b.status === 'Terbit');
-
-    const parseArticleDate = (dateStr: string) => {
-      if (!dateStr) return 0;
-      const [datePart = '', timePart = '00:00'] = dateStr.split(' ');
-      const [day = 1, month = 1, year = 2026] = datePart.split('/').map(Number);
-      const [hour = 0, min = 0] = timePart.split(':').map(Number);
-      return new Date(year, month - 1, day, hour, min).getTime();
-    };
-
-    return [...published]
-      .sort((a, b) => parseArticleDate(b.tanggal) - parseArticleDate(a.tanggal))
-      .slice(0, JUMLAH_BERITA_BERANDA);
+    return sortNewsByNewest(published).slice(0, JUMLAH_BERITA_BERANDA);
   }, [data.berita]);
 
-  // Cari artikel maklumat atau gunakan artikel terbitan pertama
+  // Cari artikel maklumat atau gunakan artikel terbitan terbaru
   const maklumatArticle = useMemo(() => {
     const published = data.berita.filter((b) => b.status === 'Terbit');
+    const sorted = sortNewsByNewest(published);
     return (
-      published.find((b) => b.judul.toLowerCase().includes('maklumat')) ||
-      published[0] ||
+      sorted.find((b) => b.judul.toLowerCase().includes('maklumat')) ||
+      sorted[0] ||
       null
     );
   }, [data.berita]);

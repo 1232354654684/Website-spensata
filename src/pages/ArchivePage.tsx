@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Newspaper, Calendar, ArrowRight, User, Search } from 'lucide-react';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { useSchoolData } from '../context/SchoolDataContext';
+import { sortNewsByNewest, formatNewsDisplayDate } from '../utils/dateHelper';
 
 interface ArchivePageProps {
   onSelectArticle: (articleId: string) => void;
@@ -22,19 +23,9 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({ onSelectArticle }) => 
     return ['Semua', ...list];
   }, [publishedArticles]);
 
-  // Urutkan artikel dari yang paling baru
+  // Urutkan artikel dari yang paling baru ke terlama secara descending
   const sortedArticles = useMemo(() => {
-    const parseArticleDate = (dateStr: string) => {
-      if (!dateStr) return 0;
-      const [datePart = '', timePart = '00:00'] = dateStr.split(' ');
-      const [day = 1, month = 1, year = 2026] = datePart.split('/').map(Number);
-      const [hour = 0, min = 0] = timePart.split(':').map(Number);
-      return new Date(year, month - 1, day, hour, min).getTime();
-    };
-
-    return [...publishedArticles].sort(
-      (a, b) => parseArticleDate(b.tanggal) - parseArticleDate(a.tanggal)
-    );
+    return sortNewsByNewest(publishedArticles);
   }, [publishedArticles]);
 
   const filteredArticles = useMemo(() => {
@@ -123,12 +114,10 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({ onSelectArticle }) => 
               >
                 <div className="space-y-1.5 flex-1">
                   <div className="flex items-center gap-3 text-xs text-slate-400">
-                    {art.tanggal && (
-                      <span className="flex items-center gap-1 font-semibold text-[#0E4A6B] dark:text-[#E5A823]">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span>{art.tanggal.split(' ')[0]}</span>
-                      </span>
-                    )}
+                    <span className="flex items-center gap-1 font-semibold text-[#0E4A6B] dark:text-[#E5A823]">
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>{formatNewsDisplayDate(art)}</span>
+                    </span>
                     {art.penulis && (
                       <>
                         <span>·</span>

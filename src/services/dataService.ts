@@ -16,6 +16,9 @@ import { uploadFoto, UploadFolder } from '../lib/upload';
 import rawSeedData from '../../seed-data.json';
 import { SchoolStoreData, GaleriAlbumItem } from '../types';
 import { generateUniqueSlug } from '../utils/slugHelper';
+import { sortNewsByNewest, formatNewsDisplayDate, parseNewsTimestamp } from '../utils/dateHelper';
+
+export { sortNewsByNewest, formatNewsDisplayDate, parseNewsTimestamp };
 
 /**
  * Shared helper to parse album date string or timestamp for accurate descending sorting
@@ -373,6 +376,12 @@ export const dataService = {
             if (!snap.exists()) {
               await setDoc(docRef, item, { merge: true });
               synced++;
+            } else {
+              const docData = snap.data();
+              if ((!docData?.tanggal || docData.tanggal === '') && item.tanggal) {
+                await setDoc(docRef, { tanggal: item.tanggal }, { merge: true });
+                synced++;
+              }
             }
           }
         }
@@ -621,7 +630,10 @@ export const dataService = {
             q,
             (snap) => {
               if (!snap.empty) {
-                const items = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
+                let items = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
+                if (collectionName === 'berita') {
+                  items = sortNewsByNewest(items as any) as any;
+                }
                 callback(items as unknown as T);
               } else {
                 // If firestore collection is completely empty:

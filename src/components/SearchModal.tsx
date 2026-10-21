@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, X, FileText, Video, ArrowRight, BookOpen } from 'lucide-react';
 import { useSchoolData } from '../context/SchoolDataContext';
+import { sortNewsByNewest, formatNewsDisplayDate } from '../utils/dateHelper';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -36,11 +37,13 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 
     const publishedArticles = data.berita.filter((b) => b.status === 'Terbit');
 
-    const filteredArticles = publishedArticles.filter(
-      (a) =>
-        (a.judul && a.judul.toLowerCase().includes(q)) ||
-        (a.ringkasan && a.ringkasan.toLowerCase().includes(q)) ||
-        (Array.isArray(a.tag) && a.tag.some((t) => t.toLowerCase().includes(q)))
+    const filteredArticles = sortNewsByNewest(
+      publishedArticles.filter(
+        (a) =>
+          (a.judul && a.judul.toLowerCase().includes(q)) ||
+          (a.ringkasan && a.ringkasan.toLowerCase().includes(q)) ||
+          (Array.isArray(a.tag) && a.tag.some((t) => t.toLowerCase().includes(q)))
+      )
     );
 
     const filteredPhotos = data.galeriFoto.filter(
@@ -184,7 +187,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                               {art.judul}
                             </span>
                             <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                              <span>{art.tanggal}</span>
+                              <span>{formatNewsDisplayDate(art)}</span>
                               <span aria-hidden="true">·</span>
                               <span>{art.penulis}</span>
                             </div>

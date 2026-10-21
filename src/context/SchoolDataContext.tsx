@@ -19,6 +19,7 @@ import { dataService } from '../services/dataService';
 import { auth, db, isFirebaseConfigured, firebaseInfo, loginWithGoogle } from '../services/firebase';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { sortNewsByNewest } from '../utils/dateHelper';
 
 interface SchoolDataContextType {
   data: SchoolStoreData;
@@ -230,7 +231,8 @@ export const SchoolDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     unsubs.push(
       dataService.subscribe<BeritaItem[]>('berita', (val) => {
         if (Array.isArray(val)) {
-          setData((prev) => ({ ...prev, berita: val }));
+          const sorted = sortNewsByNewest(val);
+          setData((prev) => ({ ...prev, berita: sorted }));
         }
         markReady('berita');
       })

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar, ArrowUpRight } from 'lucide-react';
 import { BeritaItem } from '../types';
+import { formatNewsDisplayDate } from '../utils/dateHelper';
 
 interface NewsCardProps {
   article: BeritaItem;
@@ -10,7 +11,7 @@ interface NewsCardProps {
 export const NewsCard: React.FC<NewsCardProps> = ({ article, onSelect }) => {
   const title = article.judul || (article as any).title || '';
   const excerpt = article.ringkasan || (article as any).excerpt || '';
-  const date = article.tanggal || (article as any).date || '';
+  const displayDate = formatNewsDisplayDate(article);
   const category = article.kategori || (article as any).category || '';
   const coverImage = article.fotoSampul || (article as any).coverImage || '';
 
@@ -38,13 +39,11 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, onSelect }) => {
       {/* Content */}
       <div className="p-5 flex-1 flex flex-col justify-between">
         <div>
-          {/* Tanggal */}
-          {date && (
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mb-2">
-              <Calendar className="w-3.5 h-3.5 text-[#0E4A6B] dark:text-[#E5A823]" />
-              <span className="font-semibold">{date.split(' ')[0]}</span>
-            </div>
-          )}
+          {/* Tanggal - Selalu tampil dengan format DD/MM/YYYY dan ikon kalender */}
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mb-2">
+            <Calendar className="w-3.5 h-3.5 text-[#0E4A6B] dark:text-[#E5A823]" />
+            <span className="font-semibold">{displayDate}</span>
+          </div>
 
           <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-[#0E4A6B] dark:group-hover:text-[#E5A823] transition-colors line-clamp-2 leading-snug">
             {title}
